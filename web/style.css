@@ -371,3 +371,45 @@ html.large-text .action-button, html.large-text .primary-button, html.large-text
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* Payment companion: evidence, review context and recovery. */
+.agent-panel { margin: 0.65rem 0 1rem; padding: 0.8rem 1rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: #fff; }
+.agent-mode { display: inline-block; padding: 0.24rem 0.6rem; border-radius: 999px; background: #f0edf4; color: #514762; font-size: 0.76rem; font-weight: 800; }
+.agent-mode.is-live { background: var(--mint-soft); color: #075a45; }
+.agent-panel p { margin: 0.4rem 0 0; color: var(--muted); font-size: 0.77rem; }
+.agent-panel details { margin-top: 0.5rem; font-size: 0.8rem; }
+.agent-panel summary, .source-evidence summary { cursor: pointer; min-height: 2.75rem; display: flex; align-items: center; color: var(--purple-dark); font-weight: 700; }
+.agent-panel ol { display: grid; gap: 0.35rem; margin: 0; padding-inline-start: 1.3rem; }
+.journey { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; padding: 0; margin: 0.5rem 0 0.8rem; list-style: none; }
+.journey li { border-radius: 0.65rem; background: #f2eff5; color: var(--muted); padding: 0.55rem 0.4rem; text-align: center; font-size: 0.77rem; }
+.journey li.is-current { background: var(--purple-soft); color: var(--purple-dark); font-weight: 800; }
+.remaining-balance { display: grid; gap: 0.3rem; margin: 0 0.95rem 0.85rem; padding: 0.8rem; border: 1px solid #b9dfd1; border-radius: var(--radius-sm); background: var(--mint-soft); }
+.remaining-balance span { font-size: 0.8rem; color: #315d50; }
+.remaining-balance strong { font-size: 1.35rem; text-align: right; color: #07523e; }
+.remaining-balance small { color: #45695d; font-size: 0.72rem; }
+.risk-coaching { margin: 0 0.95rem 0.65rem; padding: 0.85rem; border: 1px solid #efcf9e; border-radius: var(--radius-sm); background: #fff8ed; color: #754812; }
+.risk-coaching strong { font-size: 0.88rem; }
+.risk-coaching p { margin: 0.35rem 0 0; font-size: 0.8rem; }
+.risk-choice { padding: 0 1rem; font-size: 0.77rem; color: var(--muted); }
+.history-detail { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.history-detail small { color: var(--muted); direction: ltr; unicode-bidi: isolate; }
+.history-detail .text-button { font-size: 0.75rem; }
+.source-evidence { border-top: 1px solid var(--line); margin-top: 0.75rem; }
+.source-evidence p { font-size: 0.75rem; color: var(--muted); overflow-wrap: anywhere; }
+.next-step { margin: 0.75rem 0; padding: 0.75rem; background: var(--purple-soft); border-radius: var(--radius-sm); font-size: 0.83rem; }
+.support-trigger { margin-top: 1rem; width: 100%; }
+.support-copy, .status-lookup textarea { width: 100%; padding: 0.75rem; margin: 0.3rem 0 0.75rem; border: 1px solid #cfc8d8; border-radius: 0.8rem; resize: vertical; color: var(--ink); background: #fff; }
+@media (max-width: 599px) {
+  .app-shell { padding: 0.65rem 0.7rem 1.25rem; }
+  .session-panel { gap: 0.45rem; padding: 0.65rem 0.8rem; }
+  .session-panel h2 { font-size: 0.86rem; }
+  .session-help { margin: 0; }
+  .account-summary { padding: 0.85rem 1rem; }
+  .agent-panel { padding: 0.6rem 0.8rem; margin-bottom: 0.65rem; }
+  .agent-panel p { font-size: 0.73rem; }
+  .detail-row { grid-template-columns: minmax(6rem, 0.9fr) minmax(0, 1.2fr); gap: 0.5rem; }
+  .detail-row dd { text-align: left; }
+  .draft-state { white-space: normal; max-width: 5rem; }
+  .draft-actions .primary-button { font-size: 0.9rem; }
+  .conversation { max-height: 23rem; }
+}

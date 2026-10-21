@@ -19,7 +19,7 @@
         <div class="brand-block">
           <div class="brand-mark" aria-hidden="true">R</div>
           <div>
-            <p class="eyebrow">READY × ZainCash</p>
+            <p class="eyebrow">READY · TOPIC 04</p>
             <h1>مساعد الدفع والتحويل</h1>
           </div>
         </div>
@@ -41,6 +41,15 @@
           <strong id="environment-label">وضع تجريبي آمن</strong>
           <p id="environment-detail">بيانات وخدمات محاكاة فقط. لا توجد أي دفعات حقيقية أو تنفيذ تلقائي للمواعيد.</p>
         </div>
+      </section>
+
+      <section class="agent-panel" aria-label="حالة المساعد">
+        <span id="agent-mode" class="agent-mode">جارِ قراءة وضع المساعد</span>
+        <p id="agent-detail">كل دفعة تبقى تجريبية وتحتاج تأكيدك.</p>
+        <details id="agent-activity" hidden>
+          <summary>شلون وصلنا لهالنتيجة؟</summary>
+          <ol id="agent-trace"></ol>
+        </details>
       </section>
 
       <section class="session-panel" aria-labelledby="session-title">
@@ -93,6 +102,11 @@
             </article>
           </div>
 
+          <ol class="journey" aria-label="خطوات العملية">
+            <li data-step="request" class="is-current">١ · طلبك</li>
+            <li data-step="review">٢ · المراجعة</li>
+            <li data-step="result">٣ · النتيجة</li>
+          </ol>
           <div class="active-area" id="active-area" aria-live="polite"></div>
 
           <form class="composer" id="chat-form" novalidate>
@@ -101,10 +115,10 @@
               id="chat-input"
               name="message"
               rows="2"
-              maxlength="800"
+              maxlength="500"
               autocomplete="off"
               dir="rtl"
-              placeholder="مثال: دزلي زر إظهار الـ QR أو جدول تحويلًا تجريبيًا"
+              placeholder="مثال: حول ٥٠ ألف لعلي، أو ادفع فاتورة الكهرباء"
               disabled
               required
             ></textarea>
@@ -123,7 +137,7 @@
               <h2 id="actions-title">اختصر الطريق</h2>
             </div>
           </div>
-          <p class="action-intro" id="actions-description">هذه الأزرار تصل إلى نفس منطق الخادم المعتمد.</p>
+          <p class="action-intro" id="actions-description">اختار اللي تحتاجه، ونمشي وياك خطوة بخطوة.</p>
           <div class="action-list" id="action-list" aria-live="polite">
             <p class="empty-actions">جارِ تحميل الخدمات المتاحة…</p>
           </div>

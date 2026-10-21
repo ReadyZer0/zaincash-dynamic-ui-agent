@@ -15,7 +15,7 @@ from action_registry import customer_tool_projection
 
 _DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
 _SECRET_RE = re.compile(r"\b(?:pin|otp)\b|(?:رقم|رمز)\s*(?:سري|pin|otp)", re.IGNORECASE)
-_TRANSFER_RE = re.compile(r"(?:حول|حوّل|تحويل|دز|ارسل|أرسل)")
+_TRANSFER_RE = re.compile(r"(?:حول|حوّل|تحويل|دز|ارسل|أرسل|\btransfer\b|\bsend\b)", re.IGNORECASE)
 _EDIT_RE = re.compile(r"(?:غير|غيّر|خلي|خلّي).{0,30}(?:مبلغ|الف|ألف|\d)")
 _SCHEDULE_RE = re.compile(r"(?:جدول|جدولة|موعد|شهري|تكرار|recurr|schedule)")
 
@@ -40,8 +40,48 @@ def normalize(text: str) -> str:
         .replace("آ", "ا")
         .replace("ى", "ي")
         .replace("ـ", "")
+        .replace("٬", ",")
     )
+    value = re.sub(r"[\u064b-\u065f]", "", value)
     return " ".join(value.split())
+
+
+def message_guard(message: str, conversation: dict[str, Any] | None = None) -> ChatDecision | None:
+    """Conservative shared guard before either interpreter sees a request.
+
+    These are transparent checks, not a complete natural-language safety proof.
+    Ambiguous financial instructions are clarified before a draft is proposed.
+    """
+    state = conversation or {}
+    normalized = normalize(message)
+    if _SECRET_RE.search(message) or re.search(
+        r"\b(?:bearer|api[_ -]?key|session[_ -]?(?:id|token))\b|رمز الدخول|توكن|مفتاح.*api",
+        normalized,
+        re.IGNORECASE,
+    ):
+        return ChatDecision("message", "لا ترسل رمز الدخول أو مفتاح API أو PIN/OTP بالمحادثة. الحساب يتحدد من جلسة التطبيق فقط.", conversation=state)
+    if normalized in {"نعم", "اي", "ايوه", "كمل", "اكمل", "yes", "confirm"}:
+        return ChatDecision("message", "الرسالة وحدها لا تنفذ أي دفع. راجع البطاقة واضغط زر التأكيد النهائي إذا أردت المتابعة.", conversation=state)
+    if re.search(r"(?:(?:لا|ما)\s*(?:تحول|تدز|ترسل|تدفع)|لاتحول|(?:لا|ما|مو)\s+(?:اريد|تريد)\s+(?:احول|تحويل|ادز|ارسل|ادفع|دفع)|لا\s+تقوم\s+ب|الغ\s*(?:التحويل|الدفع)|\b(?:do not|don't|dont|cancel|stop)\b)", normalized):
+        return ChatDecision("message", "ما راح أجهز دفعة من هالطلب. إذا عندك مراجعة مفتوحة استخدم زر إلغاء المراجعة لإبطالها.", conversation=state)
+    if re.search(r"بدون\s*تاكيد|تجاوز\s*(?:التاكيد|المراجعه)|تجاهل\s*(?:التعليمات|القواعد)|من\s*حساب(?:ه|ها|هم|\s+شخص)|استخدم\s*جلسه|demo_(?:amina|hassan|operator)|\b(?:bypass|ignore instructions|without confirmation)\b", normalized):
+        return ChatDecision("message", "ما أبدل الحساب من نص المحادثة ولا أتجاوز التأكيد. أقدر أجهز طلب واضح من حساب الجلسة الحالية فقط.", conversation=state)
+    operation_words = re.findall(r"(?:حول|تحويل|دز(?!لي)|ارسل|ادفع|سدد|\btransfer\b|\bsend\b|\bpay\b)", normalized)
+    if len(operation_words) > 1 and re.search(r"(?:\sو|\sثم|\sوبعد|\band\b|;|؛|\+)", normalized):
+        question = "طلبك بيه أكثر من عملية. خل نكمل عملية وحدة كل مرة؛ شنو تريد نبدأ بيه؟"
+        return ChatDecision("clarification", question, clarification={"field": "request", "prompt": question, "choices": []}, conversation={})
+    if re.search(r"[-−–]\s*\d|(?:سالب|ناقص)\s+|\d[.٫]\d", normalized):
+        question = "المبلغ يحتاج توضيح. اكتب مبلغاً موجباً وصحيحاً بالدينار، بدون إشارة سالب أو كسر."
+        return ChatDecision("clarification", question, clarification={"field": "amount_minor", "prompt": question, "choices": []}, conversation={})
+    groups = re.findall(r"\d+(?:,\d+)+", normalized)
+    explicit_amounts = re.findall(r"\d+(?:,\d+)*\s*(?:الف|الاف|مليون|ملايين|دينار|iqd|k)(?:\b|\s|$)", normalized)
+    if any(not re.fullmatch(r"\d{1,3}(?:,\d{3})+", group) for group in groups) or len(explicit_amounts) > 1:
+        question = "كتبت أكثر من مبلغ أو فواصل مو واضحة. اكتب مبلغ واحد مثل ٥٠٬٠٠٠ دينار حتى ما نخمن."
+        return ChatDecision("clarification", question, clarification={"field": "amount_minor", "prompt": question, "choices": []}, conversation={})
+    if re.search(r"\b(?:usd|eur|dollars?|euros?)\b|دولار|يورو", normalized):
+        question = "هذا النموذج يدعم الدينار العراقي فقط. شكد المبلغ بـ IQD؟ ما أحوّل العملة من عندي."
+        return ChatDecision("clarification", question, clarification={"field": "amount_minor", "prompt": question, "choices": []}, conversation={})
+    return None
 
 
 def parse_iqd_amount(text: str) -> tuple[int | None, bool]:
@@ -49,17 +89,30 @@ def parse_iqd_amount(text: str) -> tuple[int | None, bool]:
 
     normalized = normalize(text)
     match = re.search(
-        r"(?<!\d)(\d{1,7}(?:[ ,]\d{3})*)(?:\s*(الف|الاف|k))?(?:\s*(دينار|iqd))?(?!\d)",
+        r"(?<![\d.])(\d{1,12}(?:[ ,]\d{3})*)(?:\s*(الف|الاف|مليون|ملايين|k|m))?(?:\s*(دينار|iqd))?(?![\d.])",
         normalized,
     )
     if not match:
+        # Small explicit dialect vocabulary; unknown written numbers still ask
+        # a question. A model is not silently emulated by this offline parser.
+        words = {
+            "خمسه وعشرين": 25, "خمسة وعشرين": 25,
+            "عشره": 10, "عشرة": 10, "عشرين": 20, "ثلاثين": 30,
+            "اربعين": 40, "خمسين": 50, "ستين": 60, "سبعين": 70,
+            "ثمانين": 80, "تسعين": 90, "ميه": 100, "مية": 100,
+            "مئه": 100, "مئة": 100,
+        }
+        for phrase, number in words.items():
+            written = re.search(r"(?:^|\s)" + re.escape(phrase) + r"\s*(الف|الاف|مليون|ملايين)(?:\s|$|[،,.!?؟])", normalized)
+            if written:
+                return number * (1_000_000 if written.group(1) in {"مليون", "ملايين"} else 1_000), False
         return None, False
     digits = match.group(1).replace(" ", "").replace(",", "")
     value = int(digits)
     multiplier = match.group(2)
     has_currency = match.group(3)
     if multiplier:
-        return value * 1_000, False
+        return value * (1_000_000 if multiplier in {"مليون", "ملايين", "m"} else 1_000), False
     # "حول 50" is intentionally not interpreted as fifty thousand; users must
     # say 50 ألف, 50,000, or include an explicit currency.
     if value < 1_000 and not has_currency:
@@ -79,14 +132,10 @@ def matching_contacts(
     ]
     if full_matches:
         return full_matches
-    if "علي" in normalized or re.search(r"\bali\b", normalized):
-        return [
-            contact
-            for contact in contacts
-            if "علي" in normalize(str(contact["display_name_ar"]))
-            or normalize(str(contact["display_name_en"])).startswith("ali")
-        ]
-    return []
+    return [contact for contact in contacts if any(
+        re.search(r"(?:^|\s|ل)" + re.escape(normalize(str(contact[key])).split()[0]) + r"(?:\s|$|[،,.!?؟])", normalized)
+        for key in ("display_name_ar", "display_name_en")
+    )]
 
 
 def _recipient_clarification(
@@ -94,10 +143,10 @@ def _recipient_clarification(
 ) -> ChatDecision:
     return ChatDecision(
         kind="clarification",
-        text="تقصد أي علي؟ اختار الاسم المحفوظ حتى ما نخطئ بالتحويل.",
+        text="تقصد أي مستلم؟ اختار الاسم المحفوظ حتى ما نخطئ بالتحويل.",
         clarification={
             "field": "recipient",
-            "prompt": "تقصد أي علي؟",
+            "prompt": "تقصد أي مستلم؟",
             "choices": [
                 {"id": str(contact["id"]), "label": str(contact["display_name_ar"])}
                 for contact in contacts
@@ -189,12 +238,9 @@ def route_chat(
     """Route a bounded, untrusted user message in offline mode."""
 
     state = conversation if isinstance(conversation, dict) else {}
-    if _SECRET_RE.search(message):
-        return ChatDecision(
-            kind="message",
-            text="لا ترسل رقمك السري أو رمز OTP هنا. استخدم الإدخال الآمن في التطبيق الحقيقي.",
-            conversation=state,
-        )
+    guarded = message_guard(message, state)
+    if guarded is not None:
+        return guarded
     normalized = normalize(message)
     if normalized in {"نعم", "اي", "ايوه", "كمل", "اكمل", "yes", "confirm"}:
         return ChatDecision(
@@ -205,6 +251,10 @@ def route_chat(
 
     # Read-only routes take precedence over colloquial verbs such as "دزلي".
     # They return data immediately and never create a draft.
+    if any(term in normalized for term in ("ملخص", "مصاريف", "صرفت", "insights", "summary")):
+        return ChatDecision("view", "هذا ملخص محسوب من سجلات المحفظة التجريبية، ويا مراجع الأرقام.", "VIEW_WALLET_INSIGHTS", conversation=state)
+    if any(term in normalized for term in ("دعم", "مساعده بعمليه", "support")):
+        return ChatDecision("open_support_form", "أكدر أجهز مسودة طلب دعم من سجل العملية. تبقى عندك للمراجعة وما تنرسل لأي جهة.", "PREPARE_SUPPORT_REQUEST", conversation=state)
     if "qr" in normalized or "رمز الاستلام" in normalized or "رمز qr" in normalized:
         return ChatDecision(
             "view",
@@ -275,10 +325,6 @@ def route_chat(
             return _recipient_needed({"pending": pending})
         return _amount_clarification({"pending": pending}, ambiguous=ambiguous)
 
-    pending_decision = _try_pending_transfer(message, state, contacts)
-    if pending_decision is not None:
-        return pending_decision
-
     if any(term in normalized for term in ("فاتور", "كهرباء", "bill")):
         if not bills:
             return ChatDecision(
@@ -286,12 +332,33 @@ def route_chat(
                 text="ما لقيت فاتورة تجريبية محفوظة لهذا الحساب.",
                 conversation=state,
             )
+        categories = {
+            "electricity": ("كهرب", "electric"),
+            "mobile": ("موبايل", "هاتف", "mobile", "phone"),
+            "internet": ("انترنت", "انترنيت", "internet"),
+            "water": ("ماء", "water"),
+        }
+        requested = {key for key, terms in categories.items() if any(term in normalized for term in terms)}
+        matches = [bill for bill in bills if normalize(str(bill["biller_name"])) in normalized or any(
+            any(term in normalize(str(bill["biller_name"]) + " " + str(bill["provider"])) for term in categories[key])
+            for key in requested
+        )]
+        generic = bool(re.fullmatch(r"(?:ادفع\s+)?(?:ال)?فاتور(?:ة|ه)(?:\s+(?:المحفوظة|المحفوظه)(?:\s+عندي)?|\s+عندي)?", normalized))
+        if not requested and not matches and len(bills) == 1 and generic:
+            matches = bills
+        if len(matches) != 1 or len(requested) > 1:
+            question = "أي فاتورة تقصد؟ هاي الفواتير المحفوظة بهذا الحساب فقط؛ ما أختار جهة بدالك."
+            return ChatDecision("clarification", question, clarification={"field": "bill", "prompt": question, "choices": [{"id": bill["id"], "label": bill["biller_name"]} for bill in bills]}, conversation={})
         return ChatDecision(
             kind="prepare_bill",
             text="جهزت مراجعة فاتورة من البيانات التجريبية. راجعها ثم استخدم زر التأكيد النهائي.",
-            bill_id=str(bills[0]["id"]),
+            bill_id=str(matches[0]["id"]),
             conversation={},
         )
+
+    pending_decision = _try_pending_transfer(message, state, contacts)
+    if pending_decision is not None:
+        return pending_decision
 
     return ChatDecision(
         kind="message",

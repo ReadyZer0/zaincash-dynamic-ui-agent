@@ -1,41 +1,108 @@
-# Iraqi-Arabic Dynamic UI agent — Topic 04
+# READY — Iraqi Arabic payment companion
 
-An independent, local-only prototype for the Agentic AI Challenge Iraq's Bill Pay & Transfer Agent topic. Iraqi-Arabic chat and menus use the same server-owned action registry, so a request can bring a real app control into the conversation. Balance and history are read-only. Mock transfers and bills show a complete review and require a separate final **Confirm** button.
+**Agentic AI Challenge Iraq · Topic 04: Bill Pay & Transfer Agent**
 
-This is **not** an official ZainCash app or integration. All profiles, balances, bills, QR payloads, and transactions are fictional. No real money moves. The current router is deterministic and offline; it does not call an external model.
+READY turns a short Iraqi Arabic request into a clear payment review, an explicitly confirmed **mock** transaction, and a result the user can check. Dynamic UI brings the relevant control into the conversation. Transparent risk coaching, traceable wallet figures and a support draft help before and after the payment.
 
-## Run
+This is an independent prototype, not an official ZainCash application or integration. All users, balances, contacts, bills and transactions are fictional. **No real money moves.** A real model can interpret requests when configured; it cannot confirm a payment or change the signed-in demo account.
 
-Python 3.12+ is recommended. No third-party runtime packages are required.
+## Start the app
+
+Python 3.12+ is recommended; no third-party Python runtime packages are required.
 
 ```bash
 python server.py
 ```
 
-Open `http://127.0.0.1:8765` on the same computer. On Windows, `py -3 server.py` also works. The server binds to loopback and creates a local SQLite demo database. Set `READY_DB_PATH` to a different local file for a clean run.
+On Windows, `py -3 server.py` also works. Open `http://127.0.0.1:8765` on the same computer. The default is `OFFLINE_DEMO`, a deterministic interpreter with no model calls. Select a fictional profile and try `حول ٥٠ ألف لعلي`: the app asks which saved Ali you mean before preparing a review.
 
-## Test
+The server creates `data/demo_wallet.sqlite3`. To use a fresh, separate dataset, set `READY_DB_PATH` to a new local file before starting. Existing balances are preserved on restart. Do not put real data into it.
+
+### Connect a real model
+
+Follow [LLM_SETUP.md](docs/LLM_SETUP.md) for Windows/Linux commands with a hidden API-key prompt. Configure these on the **backend**:
+
+| Setting | Purpose |
+| --- | --- |
+| `READY_AGENT_MODE=llm` | Explicitly enable model calls |
+| `READY_LLM_BASE_URL` | Provider's OpenAI-compatible base URL |
+| `READY_LLM_MODEL` | Exact enabled model with function/tool calling |
+| `READY_LLM_API_KEY` | Server-side credential, never bundled in the APK |
+
+Use the actual endpoint/model from the provider console. Alibaba Qwen's compatible API is a documented candidate; no specific cloud model quality or compatibility result is claimed yet. Local compatible loopback model servers are supported. The app distinguishes configuration present from a successful model request. A failed call never silently becomes an offline result. `.env` files are not loaded automatically.
+
+### Android APK
+
+The native **READY Demo** client loads the same mobile interface from this backend. It contains neither Python nor an LLM key. The backend computer must remain available while testing.
+
+See [ANDROID.md](docs/ANDROID.md) for APK metadata, installation, USB setup, limitations and a source rebuild. With Android platform tools and USB debugging ready, run on the backend computer:
+
+```bash
+adb reverse tcp:8765 tcp:8765
+```
+
+```bash
+adb install -r AliDheaa_Topic04_READY_Debug.apk
+```
+
+Open READY Demo and connect to its default `http://127.0.0.1:8765/`. The server remains loopback-only; entering a LAN address or public URL does not enable remote hosting. The advanced HTTPS setting requires a separately secured deployment, which is not included here.
+
+## Implemented features
+
+- Iraqi Arabic/RTL chat, large-text option, mobile review and registered Dynamic UI actions shared by chat and menus.
+- Explicit offline mode plus a bounded real-model tool loop: current contacts, bills, balance/history, clarification, one prepared review, status, insights and support draft. Bounds: 4 provider rounds, 8 tool calls and a 45-second turn budget.
+- Closed tool schemas; current owner-scoped lookups; conservative recipient, bill and amount grounding. Unsupported wording asks for clarification rather than inventing a draft.
+- Server-owned draft version, owner/session binding, expiring HttpOnly approval credential, CSRF checks, final Confirm, transactional idempotency and receipt recovery. Chat text cannot confirm a payment.
+- Readable advisory risk rules before confirmation and estimated remaining balance. These are prototype heuristics, not a measured fraud classifier.
+- Wallet summaries calculated from source records with references and explicit limits. Illustrative history is not a cash-flow forecast or profit figure.
+- Owner-scoped support draft using the original transaction. The user reviews/copies it. **No message is sent and no external support ticket is created.**
+- Monthly reminder/preparation configuration with separate review: no timer, notification or automatic debit.
+- Native Java Android shell: selected-origin WebView, loopback-only cleartext, certificate errors fail closed, no native JavaScript bridge or shared provider key.
+
+## Evaluation and tests
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-The 24-test suite passed locally on 21 October 2026. This is a dated result, not a claim about a later commit or deployment.
+The original 24-test baseline was rerun successfully before changes. The expanded suite covers the wallet, HTTP boundary, scripted model protocol, multi-turn integration, recovery/advisory failures and evaluator correctness. See the dated [implementation status](docs/IMPLEMENTATION_STATUS.md).
 
-## Safety boundary
+```bash
+python -m evaluation.run --mode offline
+```
 
-- The offline interpreter can select registered read/prepare actions only. It cannot confirm, commit, or receive approval secrets.
-- The backend derives account ownership from the current demo session, not a user ID in the chat message. It validates policy, balance, draft version and expiry at confirmation.
-- Payment review and final confirmation are distinct server operations. Retries use an idempotency key, and the mock ledger records at most one debit.
-- Monthly scheduling configures a reminder/preparation plan only. It creates no timer, notification, or debit.
-- Demo session checks do **not** equal production authentication. A stolen authenticated session would be a serious production threat; this prototype makes no claim of preventing that scenario.
+On 21 October 2026, the offline development run passed **74/74 cases and 80/80 turns**, with **0 incorrect proposals and 0 ledger changes during chat**. These AI-authored cases informed implementation fixes. They are **not held out or native-human reviewed**. This is not real-model accuracy or payment completion accuracy: the evaluator never presses Confirm. Confirmation and retry behavior have separate tests.
 
-See [architecture](docs/ARCHITECTURE.md), [threat model](docs/THREAT_MODEL.md), and [synthetic data](docs/DEMO_DATA.md).
+See [the measured report](docs/evaluation-results/20261021_offline_dev_v2.md) and [evaluation protocol](docs/EVALUATION.md). Live evaluation requires explicit network opt-in and can consume quota. No live provider call, real-model latency/cost, or physical Android device test is claimed in this delivery.
 
-## Scope
+## Focus and roadmap
 
-Current: typed Iraqi-Arabic chat, registered Dynamic UI controls, synthetic balance/history, mock transfer/bill review and confirmation, receipt/status recovery, mock receive QR, and zero-debit monthly-plan configuration.
+The [full build plan](docs/BUILD_PLAN.md), committed before implementation, keeps the project focused on Topic 04. It brings useful parts of Topic 01 (risk coaching), Topic 02 (traceable wallet context), and Topic 06 (recovery information) into the payment journey. These helpers are not complete submissions for those other topics. Loan-file preparation and synthetic document capture remain gated later work.
 
-Not enabled: external LLM calls, real payments, production KYC, stock orders, external notifications, and original-app/device integration. Bonsai-27B locally and an Alibaba cloud API are **candidates to evaluate later**, only after their phase and budget are approved.
+Before the 8 November MVP: connect and benchmark an actual model, have Iraqi speakers edit at least 50 dialect requests, observe users completing payment and recovery tasks, freeze a fresh final set and measure it without tuning on its answers. Planned targets remain targets, not achieved held-out results.
 
-The source is intended for public judge review. The README and code use fictional data only; local databases, presentation drafts, and contact details are not included.
+## Failure behavior and boundaries
+
+| Situation | Behavior |
+| --- | --- |
+| Duplicate name, missing amount or unsupported currency | Ask for clarification; never guess a payment |
+| Model timeout/authentication/quota failure | Explicit error; no disguised offline fallback; menus remain available |
+| Negative/decimal/malformed amount, negated or multiple payments | Conservative clarification/refusal before preparation |
+| Changed, expired or superseded review | Reject old approval; require a fresh review |
+| Repeated final confirmation | Return stored receipt; one mock debit |
+| Unknown payment result | Query the original record; do not create another payment automatically |
+| Optional advisory log unavailable after debit | Preserve the authoritative receipt and disclose the advisory failure |
+| Another user's transaction/support reference | Owner-scoped lookup rejects it |
+
+Demo sessions are not production authentication. Real customer data, official payment adapters, production KYC, credit decisions and public hosting are outside this release. Natural-language guards are conservative and do not prove perfect interpretation of arbitrary paraphrases. The readable review and separate server confirmation remain essential.
+
+## Architecture, data and disclosure
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Threat model](docs/THREAT_MODEL.md)
+- [Synthetic fixture data](docs/DEMO_DATA.md)
+- [Full plan and week-by-week roadmap](docs/BUILD_PLAN.md)
+- [Android setup/build](docs/ANDROID.md)
+- [Model connection](docs/LLM_SETUP.md)
+
+OpenAI ChatGPT and coding agents assisted planning, implementation, tests and synthetic case authoring. The runtime inference model is a separate configurable choice and must be disclosed with each live evaluation. No competitor code was copied. Keys, databases, APK signing material and downloaded build tools are excluded from Git.

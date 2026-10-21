@@ -38,4 +38,4 @@ Current: typed Iraqi-Arabic chat, registered Dynamic UI controls, synthetic bala
 
 Not enabled: external LLM calls, real payments, production KYC, stock orders, external notifications, and original-app/device integration. Bonsai-27B locally and an Alibaba cloud API are **candidates to evaluate later**, only after their phase and budget are approved.
 
-The repository is private during review. Challenge judges need a GitHub invitation to inspect the code; a link alone does not grant access.
+The source is intended for public judge review. The README and code use fictional data only; local databases, presentation drafts, and contact details are not included.

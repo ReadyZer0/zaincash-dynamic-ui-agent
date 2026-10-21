@@ -13,6 +13,7 @@
     activeDraft: null,
     busy: false,
     bootstrapped: false,
+    agent: null,
   };
 
   const dom = {
@@ -32,6 +33,10 @@
     footerStatus: document.querySelector('#footer-status'),
     toastRegion: document.querySelector('#toast-region'),
     textSize: document.querySelector('#text-size-toggle'),
+    agentMode: document.querySelector('#agent-mode'),
+    agentDetail: document.querySelector('#agent-detail'),
+    agentActivity: document.querySelector('#agent-activity'),
+    agentTrace: document.querySelector('#agent-trace'),
   };
 
   const LABELS = {
@@ -122,7 +127,23 @@
     try { payload = await response.json(); } catch (_) { /* handled below */ }
     if (!response.ok) {
       const detail = payload && (payload.message || payload.detail || (typeof payload.error === 'object' ? (payload.error.message || payload.error.code) : payload.error));
-      throw apiError(detail || 'تعذر الاتصال بالخدمة التجريبية.', response.status);
+      const error = apiError(detail || 'تعذر الاتصال بالخدمة التجريبية.', response.status);
+      error.code = payload && payload.error && payload.error.code;
+      const localized = {
+        INSUFFICIENT_FUNDS: 'الرصيد ما يكفي للمبلغ والرسوم. راجع الرصيد أو عدّل المبلغ؛ ما تمت دفعة جديدة.',
+        INSUFFICIENT_BALANCE: 'الرصيد ما يكفي للمبلغ والرسوم. راجع الرصيد أو عدّل المبلغ؛ ما تمت دفعة جديدة.',
+        MODEL_NOT_CONFIGURED: 'اتصال النموذج يحتاج إعداد على الكمبيوتر. افتح دليل إعداد النموذج؛ تگدر تستخدم أزرار الخدمات هسه.',
+        MODEL_AUTH_FAILED: 'خدمة النموذج رفضت مفتاح API المحفوظ بالخادم. راجع إعدادات المفتاح على الكمبيوتر.',
+        MODEL_RATE_LIMIT: 'خدمة النموذج وصلت لحد الطلبات أو الرصيد. جرّب لاحقاً أو استخدم أزرار الخدمات.',
+        MODEL_TIMEOUT: 'النموذج تأخر بالرد. ما نفذنا أي دفعة. تگدر تحاول مرة ثانية.',
+        MODEL_UNAVAILABLE: 'تعذر الوصول للنموذج. تحقق من اتصال الكمبيوتر وإعدادات الخدمة.',
+        MODEL_INVALID_ARGUMENTS: 'رد النموذج ما حدد تفاصيل صالحة. ما نفذنا أي دفعة؛ وضّح طلبك أو استخدم الأزرار.',
+        MODEL_TOOL_FORBIDDEN: 'النموذج طلب إجراء غير مسموح. ما نفذنا أي دفعة.',
+        MODEL_AMBIGUOUS_RECIPIENT: 'المستلم مو واضح. اكتب الاسم الكامل من جهات الاتصال حتى نجهز المراجعة.',
+        TRANSACTION_NOT_FOUND: 'ما لقينا هالمرجع ضمن عمليات حسابك التجريبي. تأكد من المرجع والمستخدم المختار.',
+      };
+      if (localized[error.code]) error.message = localized[error.code];
+      throw error;
     }
     return payload || {};
   }
@@ -173,7 +194,33 @@
     };
     dom.connection.textContent = labels[stateName] || labels.ready;
     dom.connection.classList.toggle('is-problem', stateName === 'offline');
-    dom.footerStatus.textContent = detail || (stateName === 'offline' ? 'لم نتمكن من الوصول إلى الخادم المحلي.' : 'لا توجد اتصالات خارجية.');
+    dom.footerStatus.textContent = detail || (stateName === 'offline' ? 'لم نتمكن من الوصول إلى الخادم المحلي.' : state.agent && state.agent.mode === 'LIVE_MODEL' ? 'المحفظة محاكاة؛ تفسير الطلب يتصل بمزوّد النموذج المهيأ.' : 'تفسير محلي ثابت؛ لا توجد اتصالات بنموذج خارجي.');
+  }
+
+  function setJourney(step) {
+    document.querySelectorAll('[data-step]').forEach((node) => {
+      node.classList.toggle('is-current', node.dataset.step === step);
+      if (node.dataset.step === step) node.setAttribute('aria-current', 'step');
+      else node.removeAttribute('aria-current');
+    });
+  }
+
+  function renderAgent(agent) {
+    if (!agent) return;
+    state.agent = agent;
+    const live = agent.mode === 'LIVE_MODEL';
+    const success = agent.last_request === 'succeeded';
+    dom.agentMode.textContent = !live ? 'تجربة محلية · بدون نموذج' : !agent.configured ? 'النموذج يحتاج إعداد' : success ? 'تم الرد من النموذج' : agent.last_request === 'failed' ? 'تعذر رد النموذج' : 'اتصال النموذج مهيأ';
+    dom.agentMode.classList.toggle('is-live', live && agent.configured);
+    dom.agentDetail.textContent = !live
+      ? 'التفسير هنا بقواعد ثابتة. فعّل اتصال النموذج من إعدادات الخادم لتجربة الأدوات الذكية.'
+      : !agent.configured
+        ? 'إعداد النموذج يتم على الكمبيوتر. مفاتيح API ما تنكتب بالمحادثة أو داخل التطبيق.'
+        : `النموذج: ${agent.model || '—'} · ${success ? 'الأدوات نفّذت قراءات أو تجهيز مراجعة فقط؛ القرار الأخير إلك.' : 'الاتصال الفعلي ينفحص عند إرسال طلب. كل عمليات المحفظة تبقى محاكاة.'}`;
+    const names = { LIST_CONTACTS: 'قرأ جهات اتصال حسابك', LIST_BILLS: 'قرأ الفواتير المحفوظة', VIEW_BALANCE: 'فحص الرصيد', VIEW_HISTORY: 'قرأ سجل العمليات', OPEN_TRANSFER: 'جهز مراجعة تحويل', OPEN_BILL_PAYMENT: 'جهز مراجعة الفاتورة', OPEN_SCHEDULED_TRANSFER: 'جهز إعداد موعد', ASK_USER: 'طلب توضيح منك', VIEW_WALLET_INSIGHTS: 'حسب ملخص المحفظة', PREPARE_SUPPORT_REQUEST: 'جهز مسودة دعم للمراجعة', CHECK_PAYMENT_STATUS: 'فحص حالة نفس العملية', SHOW_RECEIVE_QR: 'أظهر رمز الاستلام' };
+    dom.agentTrace.replaceChildren();
+    asArray(agent.trace).forEach((item) => dom.agentTrace.append(element('li', { text: `${['error', 'rejected'].includes(item.status) ? 'لم ينفذ: ' : ''}${names[item.tool] || 'إجراء مسجل'}${['error', 'rejected'].includes(item.status) ? ' — يحتاج توضيح أو معالجة' : ''}` })));
+    dom.agentActivity.hidden = !dom.agentTrace.childElementCount;
   }
 
   function setBusy(isBusy, message) {
@@ -468,6 +515,7 @@
 
   function renderDraft(draft) {
     state.activeDraft = draft;
+    setJourney('review');
     const scheduled = isScheduledDraft(draft);
     const card = element('section', { className: 'draft-card', attrs: { 'aria-labelledby': 'draft-title', 'data-draft-id': draft.id } });
     const header = element('div', { className: 'draft-header' });
@@ -496,6 +544,19 @@
     const warningValue = sourceWarnings(draft);
     const warningText = Array.isArray(warningValue) ? warningValue.join(' · ') : warningValue;
     if (warningText) card.append(element('p', { className: 'draft-warning', text: warningText }));
+    const context = draft.payment_context;
+    if (draft.context_unavailable) card.append(element('p', { className: 'draft-warning', text: 'تفاصيل التنبيه الإضافية غير متاحة حالياً. بيانات المراجعة الأساسية جاية من المحفظة؛ تحقق من الاسم والمبلغ بنفسك.' }));
+    if (context && !scheduled) {
+      const remaining = element('section', { className: 'remaining-balance', attrs: { 'aria-label': 'الرصيد بعد العملية' } });
+      remaining.append(element('span', { text: 'الرصيد المتوقع بعد المبلغ والرسوم' }), element('strong', { text: formatMoney(context.estimated_after_minor, 'IQD'), attrs: { 'data-ltr': 'true' } }), element('small', { text: context.balance_note }));
+      card.append(remaining);
+      asArray(context.signals).forEach((signal) => {
+        const coaching = element('aside', { className: 'risk-coaching', attrs: { role: 'note' } });
+        coaching.append(element('strong', { text: signal.title }), element('p', { text: signal.explanation }));
+        card.append(coaching);
+      });
+      if (asArray(context.signals).length) card.append(element('p', { className: 'risk-choice', text: 'هذا تنبيه للمراجعة. تگدر تلغي، أو تتابع بالتأكيد بعد ما تتحقق بنفسك.' }));
+    }
     if (scheduled) {
       card.append(element('p', {
         className: 'mock-schedule-notice',
@@ -504,7 +565,7 @@
     }
 
     const controls = element('div', { className: 'draft-actions' });
-    const confirmLabel = scheduled ? 'تأكيد حفظ إعداد الموعد التجريبي' : 'تأكيد العملية النهائية';
+    const confirmLabel = scheduled ? 'تأكيد حفظ إعداد الموعد التجريبي' : `تأكيد خصم ${formatMoney((draft.review || {}).total_debit_minor, 'IQD')} تجريبياً`;
     const confirm = element('button', { className: 'primary-button', text: draft.can_confirm === false ? 'المراجعة غير جاهزة للتأكيد' : confirmLabel, attrs: { type: 'button', 'data-confirm-draft': draft.id } });
     if (draft.can_confirm === false) confirm.disabled = true;
     const cancel = element('button', { className: 'secondary-button', text: 'إلغاء المراجعة', attrs: { type: 'button', 'data-cancel-draft': draft.id } });
@@ -812,12 +873,14 @@
       receive_qr: 'رمز الاستلام',
       history: 'سجل العمليات',
       schedules: 'المواعيد',
+      balance: 'رصيد المحفظة التجريبية',
     };
     const card = element('section', { className: 'data-card', attrs: { 'aria-label': 'نتيجة للعرض' } });
     const title = data.title || payload.title || payload.view_title || titles[kind] || 'نتيجة الطلب';
     const message = data.message || data.disclaimer || payload.message || payload.reply || payload.text;
     card.append(element('h3', { text: title }));
     if (message) card.append(element('p', { text: message }));
+    if (kind === 'balance') card.append(element('p', { className: 'balance-value', text: data.formatted || formatMoney(data.available_minor, 'IQD'), attrs: { 'data-ltr': 'true' } }));
     if (kind === 'receive_qr' && data.matrix) {
       const qrFigure = renderQrCode(data.matrix);
       if (qrFigure) card.append(qrFigure);
@@ -829,11 +892,20 @@
       entries.forEach((entry, index) => {
         const item = typeof entry === 'object' && entry !== null ? entry : { label: `بند ${index + 1}`, value: entry };
         const label = item.label || item.name || item.key || item.recipient || item.counterparty || `بند ${index + 1}`;
-        const value = item.value ?? item.display_value ?? item.formatted ?? item.amount ?? item.text ?? item.reference ?? '';
+        const value = item.value ?? item.display_value ?? item.formatted ?? (item.amount_minor !== undefined ? formatMoney(item.amount_minor, item.currency || 'IQD') : undefined) ?? item.amount ?? item.text ?? item.reference ?? '';
         const row = element('div', { className: 'data-row' });
         const dd = element('dd', { text: value });
         if (isLtrValue(label, value)) dd.setAttribute('data-ltr', 'true');
         row.append(element('dt', { text: label }), dd);
+        if (kind === 'history') {
+          const detail = element('div', { className: 'history-detail' });
+          const statusLabel = { SUCCEEDED: 'ناجحة', FAILED: 'فاشلة', UNKNOWN: 'غير مؤكدة' }[item.status] || item.status;
+          detail.append(element('small', { text: `${statusLabel || ''} · ${item.reference || ''}` }));
+          const lookup = element('button', { className: 'text-button', text: 'الحالة والمساعدة', attrs: { type: 'button' } });
+          lookup.addEventListener('click', () => recoverStatus(item.id, lookup));
+          detail.append(lookup);
+          row.append(detail);
+        }
         list.append(row);
       });
       card.append(list);
@@ -848,6 +920,23 @@
     }
     if (data.payable === false) {
       card.append(element('p', { className: 'draft-warning', text: 'هذا رمز استلام تجريبي وغير قابل للدفع.' }));
+    }
+    if (data.next_step) card.append(element('p', { className: 'next-step', text: data.next_step }));
+    if (kind === 'wallet_insights') {
+      const evidence = element('details', { className: 'source-evidence' });
+      evidence.append(element('summary', { text: 'مصادر الأرقام وحدودها' }), element('p', { text: 'آخر ١٠٠ سجل تجريبي فقط. هذا مو ربح أو توقع دخل، والرصيد الحالي مستقل عن أمثلة السجل القديمة.' }));
+      asArray(data.source_records).forEach((record) => evidence.append(element('p', { text: `${record.reference} · ${record.counterparty} · ${formatMoney(record.amount_minor, 'IQD')} · ${record.status}` })));
+      card.append(evidence);
+    }
+    if (kind === 'support_draft') {
+      const draftText = element('textarea', { className: 'support-copy', attrs: { readonly: '', rows: '9', 'aria-label': 'نص مسودة الدعم' } });
+      draftText.value = data.draft_text || '';
+      const copy = element('button', { className: 'secondary-button', text: 'نسخ المسودة للمراجعة', attrs: { type: 'button' } });
+      copy.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(draftText.value); showToast('تم نسخ المسودة. ما انرسلت لأي جهة.'); }
+        catch (_) { draftText.focus(); draftText.select(); showToast('حددنا النص حتى تنسخه بنفسك.'); }
+      });
+      card.append(draftText, copy);
     }
     return card;
   }
@@ -866,6 +955,7 @@
   }
 
   function renderStatus(payload) {
+    setJourney('result');
     const status = normalizeStatus(payload);
     const isUnknown = ['UNKNOWN', 'PENDING', 'SUBMITTED', 'PROCESSING'].includes(status.raw);
     const isFailed = ['FAILED', 'CANCELLED', 'EXPIRED', 'DECLINED'].includes(status.raw);
@@ -893,6 +983,11 @@
       refresh.addEventListener('click', () => recoverStatus(status.transactionId, refresh));
       controls.append(refresh);
       body.append(controls);
+    }
+    if (status.transactionId) {
+      const help = element('button', { className: 'secondary-button support-trigger', text: 'تحتاج مساعدة؟ جهز مسودة دعم', attrs: { type: 'button' } });
+      help.addEventListener('click', () => renderSupportForm(status.reference || status.transactionId));
+      body.append(help);
     }
     appendResumeReviewControl(body);
     card.append(body);
@@ -928,12 +1023,18 @@
   }
 
   function processResponse(payload, options) {
+    if (payload.advisory_recorded === false) appendMessage('system', 'نتيجة الإجراء محفوظة في المحفظة. تعذر حفظ سجل التنبيه الإضافي؛ لا تعيد الدفع بسبب هالتنبيه.');
+    if (payload.agent) renderAgent(payload.agent);
+    if (payload.balance) renderAccount(payload);
+    if (payload.view && payload.view.kind === 'balance') renderAccount({ balance: payload.view.data });
     const suppressMessage = Boolean(options && options.suppressMessage);
     const messagesRendered = suppressMessage ? false : appendServerMessages(payload.messages);
     const message = responseMessage(payload);
     if (!suppressMessage && !messagesRendered && message) appendMessage('assistant', message, responseActions(payload));
     else if (!suppressMessage && !messagesRendered && asArray(responseActions(payload)).length) appendMessage('assistant', 'تفضل، هذه الخيارات المتاحة.', responseActions(payload));
     if (!suppressMessage && payload.clarification) appendClarification(payload.clarification, messagesRendered || Boolean(message));
+    if (payload.view && payload.view.kind === 'support_form') { renderSupportForm(); return; }
+    if (payload.view && payload.view.kind === 'payment_status') { renderStatus({ transaction: payload.view.data }); return; }
 
     const scheduleForm = rememberScheduleForm(payload);
     if (scheduleForm) {
@@ -972,7 +1073,30 @@
       savedReview.append(element('h3', { text: 'مراجعة العملية محفوظة' }), element('p', { text: 'يمكنك متابعة المحادثة أو العودة إلى مراجعة العملية في أي وقت.' }));
       appendResumeReviewControl(savedReview);
       setActive(savedReview);
+    } else {
+      setJourney('request');
+      setActive(null);
     }
+  }
+
+  function renderSupportForm(reference) {
+    const card = element('section', { className: 'data-card' });
+    card.append(element('h3', { text: 'جهز طلب دعم من سجل العملية' }), element('p', { text: 'هاي مسودة تبقى للمراجعة عندك. ما نرسلها أو نفتح تذكرة خارجية.' }));
+    const form = element('form', { className: 'status-lookup' });
+    const ref = element('input', { attrs: { id: 'support-reference', required: '', maxlength: '100', dir: 'ltr', placeholder: 'MOCK-…' } });
+    ref.value = reference || '';
+    const issue = element('textarea', { attrs: { id: 'support-issue', required: '', maxlength: '500', rows: '3', placeholder: 'شنو المشكلة؟ بدون PIN أو OTP أو معلومات حقيقية.' } });
+    const submit = element('button', { className: 'primary-button', text: 'عرض مسودة الدعم', attrs: { type: 'submit' } });
+    form.append(element('label', { text: 'مرجع العملية أو معرّفها', attrs: { for: 'support-reference' } }), ref, element('label', { text: 'وصفك للمشكلة', attrs: { for: 'support-issue' } }), issue, submit);
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (state.busy || !ref.value.trim() || !issue.value.trim()) return;
+      setBusy(true, 'جارِ قراءة السجل وتجهيز المسودة…'); submit.disabled = true;
+      try { processResponse(await api.action('PREPARE_SUPPORT_REQUEST', { transaction_id: ref.value.trim(), issue: issue.value.trim() })); }
+      catch (error) { showToast(error.message, 'error'); }
+      finally { setBusy(false); submit.disabled = false; }
+    });
+    card.append(form); appendResumeReviewControl(card); setActive(card);
   }
   function beginChatStarter(message) {
     if (state.busy || !state.bootstrapped) return;
@@ -1052,6 +1176,7 @@
       renderStatusLookup(action);
       return;
     }
+    if (actionId === 'PREPARE_SUPPORT_REQUEST') { renderSupportForm(); return; }
     setBusy(true, 'جارِ فتح الخدمة المسجلة…');
     renderLoading(`جارِ فتح «${action.label}»…`);
     try {
@@ -1077,7 +1202,8 @@
       const response = await api.chat(message);
       processResponse(response);
     } catch (error) {
-      appendMessage('system', 'تعذر الوصول إلى الخدمة، لذلك لم نُنشئ أو ننّفذ أي عملية.', []);
+      appendMessage('system', 'تعذر إكمال الرد. ما أرسلنا تأكيد دفع. إذا عندك مراجعة سابقة، افحصها قبل المتابعة.', []);
+      if (state.agent && state.agent.mode === 'LIVE_MODEL') renderAgent({ ...state.agent, last_request: 'failed', trace: [] });
       renderError(text(error.message), { retry: () => { dom.input.value = message; dom.input.focus(); } });
       showToast('فشل الاتصال بالخدمة المحلية.', 'error');
     } finally {
@@ -1192,6 +1318,8 @@
       renderActions(payload.actions || payload.registered_actions || []);
       rememberScheduleForm(payload);
       updateEnvironment(payload);
+      renderAgent(payload.agent);
+      setJourney('request');
       clearActiveDraft();
       if (payload.welcome_message) appendMessage('assistant', payload.welcome_message, []);
       appendServerMessages(payload.messages);

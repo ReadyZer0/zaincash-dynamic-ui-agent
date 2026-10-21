@@ -121,6 +121,15 @@ ACTION_REGISTRY: dict[str, ActionDefinition] = {
         ("customer",),
         {"transaction_id": str},
     ),
+    "VIEW_WALLET_INSIGHTS": ActionDefinition(
+        "VIEW_WALLET_INSIGHTS", "ملخص المحفظة بالأدلة", "Wallet insights", "view",
+        "wallet-insights", "wallet_insights", False, ("customer",), {},
+    ),
+    "PREPARE_SUPPORT_REQUEST": ActionDefinition(
+        "PREPARE_SUPPORT_REQUEST", "جهز طلب دعم", "Prepare support draft", "view",
+        "support-draft", "support_draft", False, ("customer",),
+        {"transaction_id": str, "issue": str},
+    ),
     "VIEW_OPERATOR_ISSUES": ActionDefinition(
         "VIEW_OPERATOR_ISSUES",
         "طلبات الدعم التجريبية",

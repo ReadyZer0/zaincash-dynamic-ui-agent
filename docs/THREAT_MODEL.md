@@ -14,4 +14,21 @@
 | Unknown result retried as a new payment | The client queries the original mock transaction or schedule-draft status; it does not make a new draft automatically. |
 | Sensitive data exposure | Fixtures are fictional, no PIN/OTP is collected, approval tokens are not included in chat responses, and APIs return only necessary review/status data. |
 
-This is a local demonstrator, not a production security claim. Real authentication, HTTPS deployment protections, encrypted storage, provider settlement, KYC, and official integration are outside the approved scope.
+## Model and mobile increment — 21 October 2026
+
+| Threat | Additional control and practical limit |
+| --- | --- |
+| Model invents a tool or changes an amount/recipient | Validate the complete tool batch before dispatch; require fresh owner-scoped lookup; ground recipient/bill/amount in user words. Conservative guards may ask extra questions. |
+| Provider redirects an Authorization header | Provider client rejects redirects. Remote endpoints require HTTPS; only a literal loopback model endpoint may use HTTP. |
+| API key leaks into APK/model context | Key is a backend environment value, excluded from repr/status/tool history. No client key field or bundled key. Raw provider errors are redacted. |
+| Infinite agent loop, slow call or concurrent turn | Four model rounds, eight tool calls and bounded timeout; fixed session lock stripes; explicit failure, no automatic retry/fallback. |
+| Model says payment succeeded without execution | Server owns reviews/receipts; prepare ends with canonical wording; unsupported obvious success prose is replaced. Generated prose is never a receipt. |
+| Risk log fails after a committed debit | Return authoritative receipt and mark advisory recording unavailable. The financial record, not an advisory write, controls retries. |
+| Support draft leaks data or sends itself | Owner-scoped original-record lookup; secret-bearing issue text rejected; no network/send or external-ticket tool exists. |
+| Android WebView loads attacker-controlled content | Selected-origin URL checks, no native JS bridge, no file/content access, no third-party cookies, TLS errors cancelled. APK is a debug testing client. |
+
+The readable scam rules are demo heuristics, not calibrated fraud detection.
+There is no claim that arbitrary prompts, stolen valid sessions, malicious
+devices or real-world attackers are perfectly handled. This is a local
+demonstrator with synthetic records, not production authentication, payment
+settlement, KYC or an official integration.

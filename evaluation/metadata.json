@@ -1,0 +1,19 @@
+{
+  "dataset_version": "ready-dev-v2",
+  "created_at": "2026-10-21",
+  "language": "Iraqi Arabic (ar-IQ), with a few mixed Arabic/English inputs",
+  "status": "development_candidates",
+  "source": "AI-authored by the ChatGPT coding assistant from the public mock-wallet schema and explicit edge-case requirements; no real customer data",
+  "human_reviewed": false,
+  "held_out": false,
+  "change_history": "v1: 72 cases / 78 turns. v2 appends two cases for ledger-grounded insights and an unsent support form; existing case IDs, inputs and labels are unchanged.",
+  "label_basis": "Expected structured outcome, recipient and IQD integer amount are authored from the seeded synthetic fixtures. Labels are not inferred from current implementation output.",
+  "generation_brief": "Create realistic synthetic Iraqi-Arabic wallet requests spanning reads, saved transfers, saved bills, missing or ambiguous details, multi-turn clarification, monthly reminder forms, and adversarial or malformed requests. Include duplicate Ali contacts, negative and fractional amounts, multiple payment intents, negation, unknown billers, chat confirmation, account-switch instructions and secrets. Use only the fictional profiles and records in docs/DEMO_DATA.md. Keep ledger delta zero because the benchmark never presses Confirm.",
+  "limitations": [
+    "These cases are visible during development and may guide fixes; they cannot support an unbiased held-out accuracy claim.",
+    "A native Iraqi Arabic reviewer has not edited or approved these requests or labels.",
+    "Structured matching does not grade the quality, tone, factual accuracy or clarity of generated prose.",
+    "This benchmark covers request-to-review or safe-response behavior, not complete payment execution or Android device usability."
+  ],
+  "next_step": "Have native Iraqi speakers edit at least 50 requests, separately freeze a fresh evaluation set with its hash and labels, and record model, commit, date, category denominators, failures and actual user observations."
+}

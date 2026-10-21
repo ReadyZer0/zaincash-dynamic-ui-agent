@@ -1,8 +1,8 @@
 """Local HTTP boundary for the READY / ZainCash safe-core mock demo.
 
 Run with ``python server.py`` and open http://127.0.0.1:8765.  The service is
-strictly local, uses only SQLite fixtures, and makes no external model or
-payment calls.
+strictly local and uses only SQLite payment fixtures. An explicitly configured
+server-side model may interpret requests; it cannot confirm or execute payments.
 """
 
 from __future__ import annotations
@@ -13,6 +13,8 @@ import mimetypes
 import os
 import re
 import socket
+import sqlite3
+import threading
 from http import HTTPStatus
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -21,7 +23,9 @@ from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse, urlsplit
 
 from action_registry import actions_for_role, get_action
-from agent import route_chat
+from agent import message_guard, route_chat
+from llm_agent import AgentError, AgentRunner, AgentToolError, LLMConfig
+from payment_assist import PaymentAssist
 from core import (
     ForbiddenError,
     IssuedDraft,
@@ -174,8 +178,33 @@ def is_local_origin(origin: str | None) -> bool:
 class DemoApp:
     """Coordinates deterministic chat with the server-owned domain layer."""
 
-    def __init__(self, database_path: str | Path) -> None:
+    def __init__(self, database_path: str | Path, *, agent_config: LLMConfig | None = None, agent_runner: AgentRunner | None = None) -> None:
         self.wallet = MockWallet(database_path)
+        self.assist = PaymentAssist(self.wallet)
+        self.agent_config = agent_config or LLMConfig.from_env()
+        self.agent_runner = agent_runner or AgentRunner(self.agent_config)
+        # Fixed lock stripes prevent interleaved turns without an unbounded
+        # dictionary of session IDs. Payment confirmation remains transactional.
+        self._chat_locks = [threading.Lock() for _ in range(64)]
+
+    def _enrich_draft(self, owner: str, issued: IssuedDraft, message: str = "") -> IssuedDraft:
+        return IssuedDraft(self._draft_context(owner, issued.draft, message), issued.confirmation_token)
+
+    def _draft_context(self, owner: str, draft: dict[str, Any], message: str = "") -> dict[str, Any]:
+        try:
+            return self.assist.attach_context(owner, draft, message)
+        except (sqlite3.Error, WalletError, ValueError):
+            # Advisory evidence must not hide a valid review or a stored receipt.
+            return {**draft, "context_unavailable": True}
+
+    def _record_decision(self, owner: str, draft: dict[str, Any], decision: str) -> bool:
+        try:
+            self.assist.record_decision(owner, draft, decision)
+            return True
+        except (sqlite3.Error, ValueError):
+            # The authoritative ledger operation has already completed. Its
+            # receipt must survive an unavailable, separate coaching audit log.
+            return False
 
     @staticmethod
     def _require_customer(session: dict[str, str]) -> None:
@@ -187,13 +216,15 @@ class DemoApp:
         user = self.wallet.get_user(session["user_id"])
         payload: dict[str, Any] = {
             "mock": True,
+            "mode": self.agent_config.public_status()["mode"],
+            "agent": self.agent_config.public_status(),
             "session": session,
             "user": user,
             "actions": actions_for_role(session["role"]),
             "messages": [
                 {
                     "role": "assistant",
-                    "text": "هذا عرض محفظة تجريبي ببيانات خيالية؛ لا توجد أي خدمة دفع أو نموذج خارجي متصل.",
+                    "text": "هلا بيك. اكدر أساعدك بالتحويل والفواتير خطوة بخطوة. كل الحسابات والدفعات هنا تجريبية؛ التأكيد النهائي يبقى بإيدك.",
                 }
             ],
         }
@@ -236,6 +267,10 @@ class DemoApp:
                 "action": public_action,
                 "view": {"kind": "history", "data": self.wallet.get_history(owner)},
             }, None
+        if action_id == "VIEW_WALLET_INSIGHTS":
+            return {"action": public_action, "view": {"kind": "wallet_insights", "data": self.assist.wallet_insights(owner)}}, None
+        if action_id == "PREPARE_SUPPORT_REQUEST":
+            return {"action": public_action, "view": {"kind": "support_draft", "data": self.assist.support_draft(owner, body["transaction_id"], body["issue"])}}, None
         if action_id == "OPEN_TRANSFER":
             issued = self.wallet.prepare_transfer(
                 owner,
@@ -244,6 +279,7 @@ class DemoApp:
                 body["amount_minor"],
                 body["currency"],
             )
+            issued = self._enrich_draft(owner, issued)
             return {
                 "action": public_action,
                 "draft": issued.draft,
@@ -282,6 +318,7 @@ class DemoApp:
             issued = self.wallet.prepare_bill_payment(
                 owner, session["id"], body["bill_id"]
             )
+            issued = self._enrich_draft(owner, issued)
             return {
                 "action": public_action,
                 "draft": issued.draft,
@@ -337,6 +374,69 @@ class DemoApp:
         self, session: dict[str, str], message: str
     ) -> tuple[dict[str, Any], IssuedDraft | IssuedScheduleDraft | None]:
         self._require_customer(session)
+        if not isinstance(message, str) or not message.strip() or len(message) > MAX_MESSAGE_CHARS:
+            raise WalletError("INVALID_MESSAGE", "Message must be between 1 and 500 characters.")
+        lock = self._chat_locks[hash(session["id"]) % len(self._chat_locks)]
+        if not lock.acquire(blocking=False):
+            raise WalletError("AGENT_BUSY", "طلبك السابق بعده قيد المعالجة. انتظر نتيجته قبل إرسال طلب ثاني.", 409)
+        try:
+            conversation = self.wallet.get_conversation(session["id"])
+            if self.agent_config.mode == "offline" or message_guard(message, conversation) is not None:
+                response, issued = self._offline_chat(session, message)
+                response["agent"] = {**self.agent_config.public_status(), "last_request": "guarded" if self.agent_config.mode != "offline" else "offline", "trace": []}
+                return response, issued
+            return self._model_chat(session, message, conversation)
+        finally:
+            lock.release()
+
+    def _model_chat(self, session: dict[str, str], message: str, conversation: dict[str, Any]) -> tuple[dict[str, Any], IssuedDraft | IssuedScheduleDraft | None]:
+        issued: IssuedDraft | IssuedScheduleDraft | None = None
+
+        def execute_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+            nonlocal issued
+            try:
+                if name == "LIST_CONTACTS":
+                    return {"contacts": self.wallet.contacts_for_owner(session["user_id"])}
+                if name == "LIST_BILLS":
+                    return {"bills": self.wallet.bills_for_owner(session["user_id"])}
+                result, capability = self.dispatch_action(session, name, arguments)
+                if capability is not None:
+                    issued = capability
+                return result
+            except WalletError as error:
+                raise AgentToolError(error.code, error.message) from None
+
+        try:
+            result = self.agent_runner.run(message, history=conversation.get("llm_history", []), execute_tool=execute_tool)
+        except AgentError as error:
+            raise WalletError(error.code, error.message, error.status) from None
+        # get fresh state because prepare_* updates server-owned active pointers.
+        next_state = self.wallet.get_conversation(session["id"])
+        next_state["llm_history"] = result.history
+        self.wallet.set_conversation(session["id"], next_state)
+        response: dict[str, Any] = {
+            "messages": [{"role": "assistant", "text": result.text}],
+            "actions": [],
+            "agent": {**self.agent_config.public_status(), "connection_tested": True, "last_request": "succeeded", "trace": result.trace, "duration_ms": result.duration_ms},
+        }
+        if result.clarification:
+            response["clarification"] = result.clarification
+        for _name, payload in result.public_results:
+            if payload.get("action"):
+                response["actions"] = [payload["action"]]
+            if payload.get("view"):
+                response["view"] = payload["view"]
+        if isinstance(issued, IssuedDraft):
+            issued = self._enrich_draft(session["user_id"], issued, message)
+            response["draft"] = issued.draft
+        elif isinstance(issued, IssuedScheduleDraft):
+            response["schedule_draft"] = issued.schedule_draft
+        return response, issued
+
+    def _offline_chat(
+        self, session: dict[str, str], message: str
+    ) -> tuple[dict[str, Any], IssuedDraft | IssuedScheduleDraft | None]:
+        self._require_customer(session)
         if (
             not isinstance(message, str)
             or not message.strip()
@@ -365,6 +465,8 @@ class DemoApp:
             response["view"] = action_response["view"]
         elif decision.kind == "clarification":
             response["clarification"] = decision.clarification
+        elif decision.kind == "open_support_form":
+            response["view"] = {"kind": "support_form", "data": {"title": "جهز طلب دعم", "sent": False}}
         elif decision.kind == "open_schedule_form":
             assert decision.action_id == "OPEN_SCHEDULED_TRANSFER"
             response["actions"] = [get_action(decision.action_id).public()]
@@ -414,13 +516,18 @@ class DemoApp:
             next_conversation = {"active_draft_id": issued.draft["id"]}
         if issued is None:
             self.wallet.set_conversation(session["id"], next_conversation)
+        elif isinstance(issued, IssuedDraft):
+            issued = self._enrich_draft(session["user_id"], issued, message)
+            response["draft"] = issued.draft
         return response, issued
 
     def cancel_draft(self, session: dict[str, str], draft_id: str) -> dict[str, Any]:
         self._require_customer(session)
         draft = self.wallet.cancel_draft(session["user_id"], session["id"], draft_id)
+        recorded = self._record_decision(session["user_id"], draft, "CANCELLED")
         return {
             "draft": draft,
+            "advisory_recorded": recorded,
             "message": "تم إلغاء المسودة التجريبية؛ لن ينفذ التأكيد السابق.",
         }
 
@@ -431,11 +538,20 @@ class DemoApp:
         draft, transaction = self.wallet.confirm_draft(
             session["user_id"], session["id"], draft_id, confirmation_token
         )
-        return {"draft": draft, "transaction": transaction}
+        recorded = self._record_decision(session["user_id"], draft, "CONFIRMED")
+        response = {"draft": draft, "transaction": transaction, "advisory_recorded": recorded}
+        try:
+            response["balance"] = self.wallet.get_balance(session["user_id"])
+        except (sqlite3.Error, WalletError):
+            response["balance_unavailable"] = True
+        return response
 
     def draft_status(self, session: dict[str, str], draft_id: str) -> dict[str, Any]:
         self._require_customer(session)
-        return self.wallet.get_draft_status(session["user_id"], draft_id)
+        response = self.wallet.get_draft_status(session["user_id"], draft_id)
+        if response.get("draft"):
+            response["draft"] = self._draft_context(session["user_id"], response["draft"])
+        return response
 
     def cancel_schedule_draft(
         self, session: dict[str, str], schedule_draft_id: str
@@ -875,6 +991,8 @@ def create_server(
     host: str = "127.0.0.1",
     port: int = 8765,
     web_root: str | Path | None = None,
+    agent_config: LLMConfig | None = None,
+    agent_runner: AgentRunner | None = None,
 ) -> ReadyHTTPServer:
     bind_host = resolve_loopback_bind_host(host)
     project_root = Path(__file__).resolve().parent
@@ -884,7 +1002,7 @@ def create_server(
         else project_root / "data" / "demo_wallet.sqlite3"
     )
     root = Path(web_root) if web_root is not None else project_root / "web"
-    return ReadyHTTPServer((bind_host, port), DemoApp(database), root)
+    return ReadyHTTPServer((bind_host, port), DemoApp(database, agent_config=agent_config, agent_runner=agent_runner), root)
 
 
 def main() -> None:
@@ -893,7 +1011,9 @@ def main() -> None:
     host, port = server.server_address[:2]
     display_host = f"[{host}]" if ":" in host else host
     print(f"READY mock wallet is running locally at http://{display_host}:{port}")
-    print("Synthetic fixtures only. No external model or payment service is enabled.")
+    print("Synthetic payments only. Agent mode: " + server.app.agent_config.public_status()["mode"])
+    if server.app.agent_config.configuration_error():
+        print(server.app.agent_config.configuration_error())
     try:
         server.serve_forever()
     except KeyboardInterrupt:

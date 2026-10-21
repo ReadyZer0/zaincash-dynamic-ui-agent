@@ -1,8 +1,9 @@
 # Synthetic demo data
 
 All names, account identifiers, balances, bills, transaction references, dates,
-and QR payloads below are fictional. They are local presentation fixtures; no
-provider, external model, device, or payment service is called.
+and QR payloads below are fictional. Fixture loading makes no network or payment
+call. In optional live agent mode these synthetic records may be sent to the
+configured model provider; no real customer data belongs in this application.
 
 ## Profiles
 
@@ -31,3 +32,12 @@ The app seeds the profiles at startup. To keep existing local demo state,
 continue using the configured database. For a separate clean run, set
 `READY_DB_PATH` to a new local SQLite path before starting `server.py`; do not
 place real user or wallet records in the demo database.
+
+## Development request data
+
+`evaluation/cases.jsonl` contains 74 ChatGPT-authored synthetic development cases
+and 80 turns. `evaluation/metadata.json` records generation instructions, the
+version change, expected labels and review status. These cases were used to
+find and fix bugs. They have not been reviewed by native Iraqi speakers and
+must not be called held-out evidence. The organizer's human-editing requirement
+and a fresh frozen final evaluation remain future work.

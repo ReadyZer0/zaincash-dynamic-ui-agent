@@ -20,6 +20,12 @@ prototype, not every item on the roadmap to 8 November.
 
 ## Verification performed
 
+The final offline evaluation was rerun on clean published implementation commit
+`157c46a5bbb647160702089f43a2849e5819eff3`. Its [Markdown report](evaluation-results/20261021_offline_final.md)
+and [machine-readable observations](evaluation-results/20261021_offline_final.json)
+record the source revision, application fingerprint and dataset hash. The earlier
+development report is retained separately.
+
 | Check | Observed result | What it establishes |
 | --- | --- | --- |
 | Original repository baseline | 24/24 tests passed before changes | Starting local HTTP/wallet behavior |

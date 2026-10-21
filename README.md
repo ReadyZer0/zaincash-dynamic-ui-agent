@@ -73,7 +73,7 @@ python -m evaluation.run --mode offline
 
 On 21 October 2026, the offline development run passed **74/74 cases and 80/80 turns**, with **0 incorrect proposals and 0 ledger changes during chat**. These AI-authored cases informed implementation fixes. They are **not held out or native-human reviewed**. This is not real-model accuracy or payment completion accuracy: the evaluator never presses Confirm. Confirmation and retry behavior have separate tests.
 
-See [the measured report](docs/evaluation-results/20261021_offline_dev_v2.md) and [evaluation protocol](docs/EVALUATION.md). Live evaluation requires explicit network opt-in and can consume quota. No live provider call, real-model latency/cost, or physical Android device test is claimed in this delivery.
+See [the final measured report](docs/evaluation-results/20261021_offline_final.md) and [evaluation protocol](docs/EVALUATION.md). Live evaluation requires explicit network opt-in and can consume quota. No live provider call, real-model latency/cost, or physical Android device test is claimed in this delivery.
 
 ## Focus and roadmap
 

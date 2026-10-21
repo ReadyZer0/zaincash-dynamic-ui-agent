@@ -1,5 +1,10 @@
 # Evaluation: what the numbers do and do not establish
 
+The latest [clean-commit offline report](evaluation-results/20261021_offline_final.md)
+records 74/74 cases and 80/80 turns on published implementation commit `157c46a5`.
+It remains development regression evidence with no real-model calls or human
+review. The earlier development snapshot below is retained for provenance.
+
 ## Current development set
 
 `evaluation/cases.jsonl` contains **74 synthetic cases and 80 conversation turns**.

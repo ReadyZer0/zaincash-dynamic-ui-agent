@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ar-IQ" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="READY — واجهة تجريبية لمساعد تحويل ودفع الفواتير باللغة العراقية"
+    />
+    <meta name="theme-color" content="#5b2aa8" />
+    <title>READY | مساعد زين كاش التجريبي</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#conversation">انتقل إلى المحادثة</a>
+
+    <main class="app-shell" aria-label="تطبيق READY التجريبي">
+      <header class="app-header">
+        <div class="brand-block">
+          <div class="brand-mark" aria-hidden="true">R</div>
+          <div>
+            <p class="eyebrow">READY × ZainCash</p>
+            <h1>مساعد الدفع والتحويل</h1>
+          </div>
+        </div>
+        <button
+          class="text-button text-size-toggle"
+          id="text-size-toggle"
+          type="button"
+          aria-pressed="false"
+          aria-label="تكبير حجم النص"
+        >
+          <span aria-hidden="true">A</span>
+          <span>تكبير النص</span>
+        </button>
+      </header>
+
+      <section class="demo-notice" aria-label="حالة بيئة التطبيق">
+        <span class="status-dot" aria-hidden="true"></span>
+        <div>
+          <strong id="environment-label">وضع تجريبي آمن</strong>
+          <p id="environment-detail">بيانات وخدمات محاكاة فقط. لا توجد أي دفعات حقيقية أو تنفيذ تلقائي للمواعيد.</p>
+        </div>
+      </section>
+
+      <section class="session-panel" aria-labelledby="session-title">
+        <div>
+          <p class="section-kicker">جلسة العرض</p>
+          <h2 id="session-title">اختر مستخدمًا تجريبيًا</h2>
+        </div>
+        <label class="select-wrap" for="demo-user">
+          <span class="sr-only">المستخدم التجريبي</span>
+          <select id="demo-user" aria-describedby="session-help" disabled>
+            <option>جارِ تحميل الجلسات…</option>
+          </select>
+        </label>
+        <p class="session-help" id="session-help">لا تعرض هذه الواجهة بيانات عملاء حقيقية.</p>
+      </section>
+
+      <section class="account-summary" id="account-summary" aria-labelledby="account-heading" hidden>
+        <div>
+          <p class="section-kicker">المحفظة المتاحة</p>
+          <h2 id="account-heading" class="balance-value" data-ltr="true">—</h2>
+          <p class="balance-caption" id="balance-caption">بيانات محاكاة</p>
+        </div>
+        <div class="account-seal" aria-hidden="true">
+          <span>محاكاة</span>
+        </div>
+      </section>
+
+      <div class="app-grid">
+        <section class="conversation-panel" aria-labelledby="conversation-title">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">تحدث باللهجة العراقية</p>
+              <h2 id="conversation-title">شلون نكدر نساعدك اليوم؟</h2>
+            </div>
+            <span class="connection-status" id="connection-status" role="status">جارِ الاتصال</span>
+          </div>
+
+          <div
+            class="conversation"
+            id="conversation"
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions text"
+            aria-label="سجل المحادثة"
+            tabindex="-1"
+          >
+            <article class="message message-assistant message-welcome" data-welcome="true">
+              <div class="message-label">READY</div>
+              <p>هلا! اكتب طلبك بالعراقي، أو اختار خدمة مسجلة من الأزرار. للدفعات أو المواعيد التجريبية راح نعرض كل التفاصيل قبل زر التأكيد النهائي.</p>
+            </article>
+          </div>
+
+          <div class="active-area" id="active-area" aria-live="polite"></div>
+
+          <form class="composer" id="chat-form" novalidate>
+            <label class="sr-only" for="chat-input">اكتب رسالتك</label>
+            <textarea
+              id="chat-input"
+              name="message"
+              rows="2"
+              maxlength="800"
+              autocomplete="off"
+              dir="rtl"
+              placeholder="مثال: دزلي زر إظهار الـ QR أو جدول تحويلًا تجريبيًا"
+              disabled
+              required
+            ></textarea>
+            <button class="primary-button send-button" id="send-button" type="submit" disabled>
+              <span>إرسال الطلب</span>
+              <span class="button-arrow" aria-hidden="true">←</span>
+            </button>
+          </form>
+          <p class="composer-hint">لا تكتب PIN أو رمز التحقق أو أي سر مالي في المحادثة.</p>
+        </section>
+
+        <aside class="actions-panel" aria-labelledby="actions-title">
+          <div class="panel-heading panel-heading-compact">
+            <div>
+              <p class="section-kicker">خدمات مسجلة</p>
+              <h2 id="actions-title">اختصر الطريق</h2>
+            </div>
+          </div>
+          <p class="action-intro" id="actions-description">هذه الأزرار تصل إلى نفس منطق الخادم المعتمد.</p>
+          <div class="action-list" id="action-list" aria-live="polite">
+            <p class="empty-actions">جارِ تحميل الخدمات المتاحة…</p>
+          </div>
+          <div class="safety-note">
+            <span class="safety-icon" aria-hidden="true">✓</span>
+            <p>النص وحده لا يحرّك أموالًا. الموعد التجريبي لا ينفّذ تلقائيًا، وزر <strong>تأكيد</strong> الظاهر في المراجعة هو الخطوة النهائية الوحيدة.</p>
+          </div>
+        </aside>
+      </div>
+
+      <footer class="app-footer">
+        <span>نموذج مستقل للتوضيح — ليس تطبيق ZainCash رسميًا.</span>
+        <span id="footer-status">لا توجد اتصالات خارجية.</span>
+      </footer>
+    </main>
+
+    <div class="toast-region" id="toast-region" aria-live="assertive" aria-atomic="true"></div>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

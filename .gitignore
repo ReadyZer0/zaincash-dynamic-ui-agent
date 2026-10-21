@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.ruff_cache/
+*.sqlite3
+*.sqlite3-*
+.env
+*.log
+ui-check-*.png
+web-ui-*.png

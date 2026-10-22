@@ -153,8 +153,10 @@ review status, prompts, models and source versions differ.
 
 ## Human usability evidence
 
-Test the actual APK with three to five Iraqi Arabic speakers, including people
-with lower smartphone confidence if available. Use synthetic accounts. Ask each
+Conduct **5–8 observed task-based sessions** with Iraqi Arabic speakers, including
+people with lower smartphone confidence if available. A smaller pilot may check
+the task instructions, but does not replace the planned 5–8 sessions. Use
+synthetic accounts. Ask each
 person to send to one of two contacts with the same first name, read the fee and
 remaining balance before confirming, and recover an uncertain result without
 starting another payment. Observe without coaching first.
@@ -164,3 +166,24 @@ the person can identify recipient/amount/fee, time to the correct review, and
 what they think happened after failure. Ask which wording or control confused
 them. These observations can substantiate the user-impact argument; do not
 invent participant results, quotes or approval.
+
+## Review and final-set preparation — 22 October 2026
+
+[Human-review and usability protocol](HUMAN_REVIEW.md) supplies the reviewer
+record format, five observed tasks and blank observation fields. There are no
+completed human sessions or human-edited requests in this delivery. The existing
+74 development cases and their labels remain unchanged.
+
+`python -m evaluation.freeze` prepares a blank review scaffold and checks a
+separately authored final candidate set. It requires the exact 80 payment /
+50 read-help / 70 adversarial split, unique case IDs and dialogues, no identical
+development dialogues, human label-review records for every case, and records
+of at least 50 distinct requests actually edited by Iraqi Arabic speakers.
+Approval or whitespace-only edits do not meet that last gate. The freeze records
+dataset/review/development hashes and refuses to overwrite existing evidence.
+
+The tool validates **record structure and consistency**, not whether a person
+really participated, whether a rewrite is idiomatic, or whether the team truly
+kept the data independent. The custodian must verify those facts. A successful
+freeze means the candidate is ready for evaluation, not that accuracy or payment
+safety has passed. No frozen final dataset is included or claimed here.

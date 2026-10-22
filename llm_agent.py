@@ -135,6 +135,8 @@ class LLMConfig:
             parsed.scheme == "http" and _is_loopback(parsed.hostname)
         ):
             return "The provider requires HTTPS; HTTP is allowed only for a literal loopback model server."
+        if parsed.path.rstrip("/").endswith("/chat/completions"):
+            return "Use the provider base URL without /chat/completions; READY appends that path."
         if not self.api_key and not _is_loopback(parsed.hostname):
             return "Set READY_LLM_API_KEY on the backend; never put it in the APK or chat."
         if len(self.api_key) > 4_096 or not self.api_key.isascii() or any(ord(c) < 32 for c in self.api_key):

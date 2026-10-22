@@ -81,14 +81,35 @@ Then run the build script, replacing the SDK path with your installation:
 python scripts/build_android.py --sdk /path/to/Android/Sdk
 ```
 
-On Windows, pass a quoted Windows SDK path. `java` and `keytool` must be on PATH. `READY_ANDROID_SDK` can be used instead of `--sdk`.
+On Windows, pass a quoted Windows SDK path. `java` and `keytool` must be on PATH,
+or pass `--jdk "C:\path\to\jdk"` for a portable JDK without changing system
+settings. `READY_ANDROID_SDK` can be used instead of `--sdk`; `JAVA_HOME` is the
+default for `--jdk` when present. Install the required SDK packages and personally
+review/accept their licenses through the official Android tools. The build script
+does not download tools, accept licenses or change machine-wide settings.
 
 Outputs:
 
 - `android/build/outputs/AliDheaa_Topic04_READY_Debug.apk`
-- `android/build/outputs/build-info.json` with the APK SHA-256, size, package, API levels, test result and signature verification.
+- `android/build/outputs/build-info.json` with the APK SHA-256, size, actual manifest
+  version/package/API levels, source commit/branch/dirty-tree status, Android-source
+  fingerprint, Java version, endpoint test result and signature verification.
 
-The script performs 38 exact-origin and endpoint-validation assertions, compiles Java/resources/DEX, aligns and signs the package, verifies its signature, checks the declared manifest, and checks the APK ZIP/DEX structure. A fresh local debug signing key is created in ignored `android/.local/debug.keystore`; neither that key nor the SDK/build output is committed. Debug builds from different signing keys cannot update one another with `adb install -r`; uninstall the prior test app first if Android reports a signature conflict. Uninstalling clears this client's local settings.
+The script performs the Java endpoint-policy assertions, compiles Java/resources/DEX,
+aligns and signs the package, verifies its signature, checks the declared manifest,
+and validates ZIP integrity plus DEX header, hashes and table bounds. These structural
+checks do not establish on-device execution. Each build uses a new ignored
+`android/build/run-*` directory; it no longer deletes previous builds. The latest
+verified files are copied to `android/build/outputs/`. A prior convenience copy is
+preserved under the new run's `previous-outputs/` before replacement. A failed build
+before publication leaves the previous artifact intact.
+
+An existing debug signing key is reused from ignored `android/.local/debug.keystore`;
+a new key is created only when absent. Neither keys nor SDK/build outputs are committed.
+Debug builds using different keys cannot update one another with `adb install -r`.
+If a signature conflict appears, preserve the previous APK/key and explain the choice:
+use the matching key to keep app state, or obtain the owner's approval before uninstalling
+the old test app. Uninstalling clears client settings; never do it silently.
 
 This is a signed **debug test build**, not a Play Store or production release. No emulator or physical Android device was available during the initial build, so installation, runtime WebView behavior and phone layout still need the device acceptance checks above.
 
@@ -119,3 +140,5 @@ Only `INTERNET` is requested. There is no camera, microphone, contacts, storage 
 - [Android Debug Bridge](https://developer.android.com/tools/adb)
 - [AAPT2](https://developer.android.com/tools/aapt2), [D8](https://developer.android.com/tools/d8), [APK signing](https://developer.android.com/tools/apksigner)
 - [SDK repository package metadata](https://dl.google.com/android/repository/repository2-1.xml)
+- [SDK package-license acceptance](https://developer.android.com/tools/sdkmanager#accept-licenses)
+- [DEX format](https://source.android.com/docs/core/runtime/dex-format)

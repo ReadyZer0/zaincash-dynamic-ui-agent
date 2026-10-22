@@ -10,11 +10,11 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+from contextlib import closing
 from typing import Any
 
 from agent import normalize
 from core import MockWallet, WalletError, money_text, utc_iso
-
 
 RISK_RULES = [
     {"id": "NEW_RECIPIENT", "rule": "No successful transfer to this saved name in the latest 100 owner-scoped records; known fixture display prefixes are removed before comparison."},
@@ -36,7 +36,9 @@ def _history_name(record: dict[str, Any]) -> str:
 class PaymentAssist:
     def __init__(self, wallet: MockWallet) -> None:
         self.wallet = wallet
-        with sqlite3.connect(wallet.database_path) as connection:
+        # A SQLite connection context commits/rolls back but does not close.
+        # Close explicitly so advisory calls cannot retain Windows file handles.
+        with closing(sqlite3.connect(wallet.database_path)) as connection, connection:
             connection.executescript("""
                 CREATE TABLE IF NOT EXISTS review_context (
                     draft_id TEXT NOT NULL, version INTEGER NOT NULL,
@@ -54,7 +56,7 @@ class PaymentAssist:
 
     def attach_context(self, owner: str, draft: dict[str, Any], message: str = "") -> dict[str, Any]:
         """Store advisory evidence separately from the immutable debit payload."""
-        with sqlite3.connect(self.wallet.database_path) as connection:
+        with closing(sqlite3.connect(self.wallet.database_path)) as connection, connection:
             existing = connection.execute(
                 "SELECT context_json FROM review_context WHERE draft_id=? AND version=? AND owner_user_id=?",
                 (draft["id"], draft["version"], owner),
@@ -93,7 +95,7 @@ class PaymentAssist:
             "balance_note": "تقدير وقت المراجعة: الرصيد الحالي ناقص المبلغ والرسوم. الخادم يعيد فحص الرصيد عند التأكيد.",
             "scope": "Rules on synthetic records only; not a fraud verdict or a guarantee of safety.",
         }
-        with sqlite3.connect(self.wallet.database_path) as connection:
+        with closing(sqlite3.connect(self.wallet.database_path)) as connection, connection:
             connection.execute(
                 "INSERT OR REPLACE INTO review_context VALUES (?, ?, ?, ?, ?)",
                 (draft["id"], draft["version"], owner, json.dumps(context, ensure_ascii=False), utc_iso()),
@@ -106,7 +108,7 @@ class PaymentAssist:
         # Core cancellation invalidates credentials by incrementing the version.
         # The user's choice concerned the preceding displayed review.
         review_version = draft["version"] - (1 if decision == "CANCELLED" else 0)
-        with sqlite3.connect(self.wallet.database_path) as connection:
+        with closing(sqlite3.connect(self.wallet.database_path)) as connection, connection:
             row = connection.execute(
                 "SELECT context_json FROM review_context WHERE draft_id=? AND version=? AND owner_user_id=?",
                 (draft["id"], review_version, owner),

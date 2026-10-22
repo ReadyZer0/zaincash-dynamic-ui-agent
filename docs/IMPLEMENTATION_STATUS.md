@@ -1,5 +1,41 @@
 # Implementation and verification — 21 October 2026
 
+## Windows continuation — 22 October 2026 (Asia/Baghdad)
+
+This section reports the **new** Windows continuation of draft PR #1 on
+`feat/windows-continuation`. The dated 21 October report below remains historical
+evidence for its own source revision; it is not a current test result.
+
+The current Python suite passed **104/104** tests on Windows, including live
+loopback HTTP tests, deterministic SQLite cleanup, owner/review/confirmation
+regressions, local launcher boundaries, final-set validation scaffolding and
+Android build safety. The offline **development** evaluator passed 74/74 cases
+and 80/80 turns with zero wrong payment proposals and zero chat-triggered ledger
+changes. Those cases remain AI-authored development data; no live model,
+held-out set or human reviewer was involved. Tests used synthetic local data.
+
+The Android APK was rebuilt locally on 22 October using Temurin JDK 17.0.20.1,
+Android platform 35 and Build Tools 35.0.0. Endpoint policy passed 38 checks;
+the build verified package/version/API, APK ZIP and DEX integrity, 16-KiB
+alignment, and v2/v3 signing. The generated `android/build/outputs/build-info.json`
+records the actual build source fingerprint, size and SHA-256. No phone or
+emulator was available, so install/launch and real device usability have **not**
+been verified. The APK is a debug client that still requires the local backend.
+
+`scripts/ready.py check`, Python compilation, JavaScript syntax and
+`git diff --check` passed. The RTK/Ruff lifecycle guard refused to run Ruff
+from this isolated clone; no Ruff result is claimed. A fresh browser visual
+check was not possible: the in-app browser denied the loopback URL via its
+security policy, so no alternate browser route was used. Historical browser
+observations below are retained with their original date, not repeated here.
+
+The five-slide build-stage brief now separates these development checks from
+planned 200-dialogue, 50 Iraqi-speaker-edit and 5–8 usability-session targets.
+Provider selection, live-model requests, held-out evaluation and device
+inspection remain future gates. No hackathon form was submitted.
+
+## Published implementation — 21 October 2026
+
 The full plan was recorded in `docs/BUILD_PLAN.md` and committed before this
 implementation increment. This delivery implements the initial connected mobile
 prototype, not every item on the roadmap to 8 November.

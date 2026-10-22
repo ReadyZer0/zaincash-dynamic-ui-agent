@@ -16,6 +16,15 @@ python server.py
 
 On Windows, `py -3 server.py` also works. Open `http://127.0.0.1:8765` on the same computer. The default is `OFFLINE_DEMO`, a deterministic interpreter with no model calls. Select a fictional profile and try `حول ٥٠ ألف لعلي`: the app asks which saved Ali you mean before preparing a review.
 
+For a foreground setup check and explicit model launch, use the standard-library helper:
+
+```powershell
+py -3 scripts/ready.py check
+py -3 scripts/ready.py serve
+```
+
+`serve` defaults to offline mode. To test a chosen tool-capable provider later, set its public base URL and model ID in that terminal, then run `py -3 scripts/ready.py serve --mode llm --allow-network`. It prompts for the key without echoing it and keeps it only in the server process. `py -3 scripts/ready.py smoke --mode llm --allow-network --limit 5` runs at most five synthetic development cases with a separate hidden key prompt. See [model setup](docs/LLM_SETUP.md). On Windows, the preflight reports missing Baghdad timezone data with an install command; it does not install packages automatically.
+
 The server creates `data/demo_wallet.sqlite3`. To use a fresh, separate dataset, set `READY_DB_PATH` to a new local file before starting. Existing balances are preserved on restart. Do not put real data into it.
 
 ### Connect a real model
@@ -74,6 +83,8 @@ python -m evaluation.run --mode offline
 On 21 October 2026, the offline development run passed **74/74 cases and 80/80 turns**, with **0 incorrect proposals and 0 ledger changes during chat**. These AI-authored cases informed implementation fixes. They are **not held out or native-human reviewed**. This is not real-model accuracy or payment completion accuracy: the evaluator never presses Confirm. Confirmation and retry behavior have separate tests.
 
 See [the final measured report](docs/evaluation-results/20261021_offline_final.md) and [evaluation protocol](docs/EVALUATION.md). Live evaluation requires explicit network opt-in and can consume quota. No live provider call, real-model latency/cost, or physical Android device test is claimed in this delivery.
+
+The 22 October continuation from draft [PR #1](https://github.com/ReadyZer0/zaincash-dynamic-ui-agent/pull/1) is tracked in [its checklist](docs/CONTINUATION_CHECKLIST.md). Current test and APK results, when rebuilt, belong in [implementation status](docs/IMPLEMENTATION_STATUS.md); the 21 October report above retains its original source revision. The [human-review protocol](docs/HUMAN_REVIEW.md) prepares a separate final dataset without representing AI-authored development examples as native-speaker evidence.
 
 ## Focus and roadmap
 

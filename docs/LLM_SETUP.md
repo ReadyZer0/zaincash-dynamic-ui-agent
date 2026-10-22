@@ -41,6 +41,28 @@ terminal prompt and keep it in the running backend process environment.
 
 ## Start on Windows PowerShell
 
+The repository also has a foreground launcher. It checks Python, SQLite and
+Baghdad timezone data, defaults to the offline mode, and requires an explicit
+network opt-in for live mode:
+
+```powershell
+py -3 scripts/ready.py check
+py -3 scripts/ready.py serve
+```
+
+After you have selected a provider and confirmed its quota, set the public URL
+and exact tool-capable model ID shown below. Then run:
+
+```powershell
+py -3 scripts/ready.py serve --mode llm --allow-network
+```
+
+The launcher uses a hidden prompt for the key; it neither writes an `.env` file
+nor puts the key in the command line or APK. It rejects an endpoint that already
+ends in `/chat/completions`. The preflight explains how to add `tzdata` if the
+Windows Python installation has no IANA timezone database. Starting the server
+still requires a separate provider choice and an approved quota budget.
+
 Run each line in the repository folder, in the same PowerShell window. Replace
 the endpoint and model placeholders with the values from your provider.
 

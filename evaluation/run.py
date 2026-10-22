@@ -7,17 +7,18 @@ Live runs require both server-side provider configuration and --allow-network.
 from __future__ import annotations
 
 import argparse
-from collections import Counter, defaultdict
-from dataclasses import replace
-from datetime import datetime, timezone
 import hashlib
 import json
 import math
-from pathlib import Path
 import sqlite3
 import subprocess
 import tempfile
 import time
+from collections import Counter, defaultdict
+from contextlib import closing
+from dataclasses import replace
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Callable
 
 from core import WalletError
@@ -165,7 +166,7 @@ def compare(expected: dict[str, Any], observed: dict[str, Any]) -> list[str]:
 
 def ledger_snapshot(path: Path) -> dict[str, Any]:
     """Watch both fictional users, not only the currently selected customer."""
-    with sqlite3.connect(path) as connection:
+    with closing(sqlite3.connect(path)) as connection:
         balances = connection.execute(
             "SELECT user_id, available_minor FROM accounts ORDER BY user_id"
         ).fetchall()

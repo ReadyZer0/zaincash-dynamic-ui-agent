@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from contextlib import redirect_stderr
 import io
 import json
-from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
+from contextlib import closing, redirect_stderr
+from pathlib import Path
 from unittest.mock import patch
 
 from evaluation.run import compare, evaluate_case, load_cases, main, observe, summarize
@@ -86,7 +86,7 @@ class EvaluationTests(unittest.TestCase):
 
             def chat(self, session, message):
                 response = super().chat(session, message)
-                with sqlite3.connect(self.test_database_path) as connection:
+                with closing(sqlite3.connect(self.test_database_path)) as connection, connection:
                     connection.execute(
                         "UPDATE accounts SET available_minor = available_minor - 1 WHERE user_id = 'demo_hassan'"
                     )

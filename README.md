@@ -84,7 +84,7 @@ On 21 October 2026, the offline development run passed **74/74 cases and 80/80 t
 
 See [the final measured report](docs/evaluation-results/20261021_offline_final.md) and [evaluation protocol](docs/EVALUATION.md). Live evaluation requires explicit network opt-in and can consume quota. No live provider call, real-model latency/cost, or physical Android device test is claimed in this delivery.
 
-The 22 October continuation from draft [PR #1](https://github.com/ReadyZer0/zaincash-dynamic-ui-agent/pull/1) is tracked in [its checklist](docs/CONTINUATION_CHECKLIST.md). Current test and APK results, when rebuilt, belong in [implementation status](docs/IMPLEMENTATION_STATUS.md); the 21 October report above retains its original source revision. The [human-review protocol](docs/HUMAN_REVIEW.md) prepares a separate final dataset without representing AI-authored development examples as native-speaker evidence.
+The 22 October continuation from draft [PR #1](https://github.com/ReadyZer0/zaincash-dynamic-ui-agent/pull/1) is tracked in [its checklist](docs/CONTINUATION_CHECKLIST.md). Its Windows suite passed **104/104**, and its clean-source offline **development** run passed **74/74 cases, 80/80 turns**; see [current status](docs/IMPLEMENTATION_STATUS.md) and the [dated report](docs/evaluation-results/20261022_windows_offline.md). The clean-source debug APK was rebuilt and structurally verified, but has not been run on a phone. The 21 October report above retains its original revision. The [human-review protocol](docs/HUMAN_REVIEW.md) prepares a separate final dataset without representing AI-authored development examples as native-speaker evidence.
 
 ## Focus and roadmap
 

@@ -113,6 +113,17 @@ the old test app. Uninstalling clears client settings; never do it silently.
 
 This is a signed **debug test build**, not a Play Store or production release. No emulator or physical Android device was available during the initial build, so installation, runtime WebView behavior and phone layout still need the device acceptance checks above.
 
+## Current Windows rebuild — 22 October 2026
+
+The project-local official SDK/JDK rebuild completed from clean commit
+`98f40f953119e7d101a34c120b7ada8589c3caa4`. The resulting package is
+`iq.ready.billpay.demo`, version `0.2.0-demo`, 33,326 bytes. Its SHA-256 is
+`356ec0596e0f3c5aa358ade931685ed5da58e29cfcbb6ab7fa17330db62a05d5`.
+The signed APK uses v2/v3, passes 16-KiB alignment and structural DEX checks,
+and passed 38 native endpoint-policy assertions. The matching ignored local
+debug key and full build metadata remain beside the APK; this does not claim
+an install or runtime check on a phone.
+
 ## Initial build tool provenance
 
 Initial compilation used Java 17.0.20, Android platform 35 revision 2, and SDK Build Tools 35.0.0. Official SDK archives were checked against the checksums in Google's SDK repository metadata before extraction:

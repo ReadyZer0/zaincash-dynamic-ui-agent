@@ -13,6 +13,9 @@ Android build safety. The offline **development** evaluator passed 74/74 cases
 and 80/80 turns with zero wrong payment proposals and zero chat-triggered ledger
 changes. Those cases remain AI-authored development data; no live model,
 held-out set or human reviewer was involved. Tests used synthetic local data.
+The [fresh report](evaluation-results/20261022_windows_offline.md) and
+[machine-readable observations](evaluation-results/20261022_windows_offline.json)
+were produced from clean source commit `98f40f953119e7d101a34c120b7ada8589c3caa4`.
 
 The Android APK was rebuilt locally on 22 October using Temurin JDK 17.0.20.1,
 Android platform 35 and Build Tools 35.0.0. Endpoint policy passed 38 checks;
@@ -21,6 +24,9 @@ alignment, and v2/v3 signing. The generated `android/build/outputs/build-info.js
 records the actual build source fingerprint, size and SHA-256. No phone or
 emulator was available, so install/launch and real device usability have **not**
 been verified. The APK is a debug client that still requires the local backend.
+The clean-source rebuild from `98f40f953119e7d101a34c120b7ada8589c3caa4`
+is 33,326 bytes, version `0.2.0-demo`, package `iq.ready.billpay.demo`,
+SHA-256 `356ec0596e0f3c5aa358ade931685ed5da58e29cfcbb6ab7fa17330db62a05d5`.
 
 `scripts/ready.py check`, Python compilation, JavaScript syntax and
 `git diff --check` passed. The RTK/Ruff lifecycle guard refused to run Ruff

@@ -62,6 +62,16 @@ subset, omitting the unlisted parallel-call flag; local tests again passed
 cost claim exists yet. The earlier provider-selection statement above describes
 the state before this later preparation.
 
+A later user-run retry stopped during local key validation with "API credential
+is invalid". It made **no** provider request, so only the first outbound
+attempt counts against the five-request approval. The validator now explains
+the accepted character/length constraint without printing the entered value
+and checks the value before placing it in the process environment. The exposed
+chat key remains unused; obtain or re-copy a fresh replacement privately. The
+full local suite passed **111/111** after this validation change. The guarded
+Ruff launcher again refused this isolated checkout (no Codex ancestor), so no
+new Ruff result is claimed.
+
 ## Published implementation — 21 October 2026
 
 The full plan was recorded in `docs/BUILD_PLAN.md` and committed before this

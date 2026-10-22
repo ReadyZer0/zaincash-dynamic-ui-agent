@@ -168,7 +168,7 @@ class LLMConfig:
         if not self.api_key and not _is_loopback(parsed.hostname):
             return "Set READY_LLM_API_KEY on the backend; never put it in the APK or chat."
         if len(self.api_key) > 4_096 or not self.api_key.isascii() or any(ord(c) < 32 for c in self.api_key):
-            return "The configured API credential is invalid."
+            return "The API credential contains non-ASCII or control characters, or is too long. Enter only the raw key at the hidden prompt."
         if not 1 <= self.timeout_seconds <= 30:
             return "The provider timeout must be between 1 and 30 seconds."
         if not 0 <= self.request_cap <= 100:

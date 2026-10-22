@@ -94,6 +94,15 @@ class LauncherTests(unittest.TestCase):
         ):
             hidden_key()
 
+    def test_invalid_pasted_key_is_rejected_before_environment_storage(self):
+        invalid_fixture = "fixture\u200bkey"
+        with patch.dict(os.environ, {}, clear=True), patch("scripts.ready.hidden_key", return_value=invalid_fixture):
+            with self.assertRaisesRegex(ValueError, "non-ASCII") as raised:
+                with runtime_environment("llm", True, "gemini"):
+                    self.fail("Invalid credential was accepted")
+            self.assertNotIn(invalid_fixture, str(raised.exception))
+            self.assertNotIn("READY_LLM_API_KEY", os.environ)
+
     def test_check_never_starts_backend_or_prompts(self):
         with (
             patch("scripts.ready.runpy.run_path", side_effect=AssertionError("Do not start")),

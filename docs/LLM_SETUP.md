@@ -44,6 +44,10 @@ instead: `& 'C:\Users\Ready\.cache\codex-runtimes\codex-primary-runtime\dependen
 Run it from the repository folder in your own PowerShell so the masked prompt
 is visible. Do not send the key through chat. The first provider attempt used
 one of the five approved requests; at most four remain under that approval.
+If local setup rejects the entered credential, no request was sent. Re-copy
+only the raw replacement key: the validator accepts ASCII text without control
+characters, up to 4,096 characters. Do not retry the credential exposed in
+chat or a key already revoked in Google AI Studio.
 
 The preset requires explicit live mode and network opt-in. It has a hard cap of
 **five outbound provider attempts per process**, counting failures; one case

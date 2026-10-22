@@ -81,7 +81,12 @@ def runtime_environment(mode: str, allow_network: bool, provider: str = "custom"
             if error := LLMConfig.from_env(preview).configuration_error():
                 raise ValueError(error)
             if not os.environ.get("READY_LLM_API_KEY"):
-                os.environ["READY_LLM_API_KEY"] = hidden_key()
+                entered_key = hidden_key()
+                candidate = dict(os.environ)
+                candidate["READY_LLM_API_KEY"] = entered_key
+                if error := LLMConfig.from_env(candidate).configuration_error():
+                    raise ValueError(error)
+                os.environ["READY_LLM_API_KEY"] = entered_key
             if error := LLMConfig.from_env().configuration_error():
                 raise ValueError(error)
         yield

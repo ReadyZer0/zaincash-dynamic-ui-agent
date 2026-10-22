@@ -45,7 +45,9 @@ key prompt and a five-outbound-request process cap. It remains **off** unless
 `--mode llm --provider gemini --allow-network` is supplied. See
 [Gemini setup and key rotation](docs/LLM_SETUP.md#gemini-trial-preset-prepared-22-october-2026).
 One synthetic Gemini smoke request subsequently returned a provider HTTP
-error; no successful model turn or model-quality result is claimed.
+error; no successful model turn or model-quality result is claimed. A later
+retry failed local key validation before any network request. The key pasted
+in chat was not reused; see the setup guide for fresh hidden-key entry.
 
 ### Android APK
 
@@ -91,7 +93,7 @@ On 21 October 2026, the offline development run passed **74/74 cases and 80/80 t
 
 See [the final measured report](docs/evaluation-results/20261021_offline_final.md) and [evaluation protocol](docs/EVALUATION.md). Live evaluation requires explicit network opt-in and can consume quota. That dated 21 October run involved no live provider call or physical Android device test.
 
-The 22 October continuation from draft [PR #1](https://github.com/ReadyZer0/zaincash-dynamic-ui-agent/pull/1) is tracked in [its checklist](docs/CONTINUATION_CHECKLIST.md). Its clean-source Windows suite passed **104/104**, and its clean-source offline **development** run passed **74/74 cases, 80/80 turns**; see [current status](docs/IMPLEMENTATION_STATUS.md) and the [dated report](docs/evaluation-results/20261022_windows_offline.md). After the later Gemini preparation, the expanded suite passed **110/110** and a [new clean-source offline development run](docs/evaluation-results/20261022_gemini_prep_offline.md) passed **74/74 cases, 80/80 turns**. A first [synthetic Gemini smoke](docs/evaluation-results/20261022_gemini_smoke1.md) failed with a provider HTTP error and no ledger change; the compatibility payload was revised and retested locally, but no successful Gemini turn is yet claimed. The clean-source debug APK was rebuilt and structurally verified, but has not been run on a phone. The 21 October report above retains its original revision. The [human-review protocol](docs/HUMAN_REVIEW.md) prepares a separate final dataset without representing AI-authored development examples as native-speaker evidence.
+The 22 October continuation from draft [PR #1](https://github.com/ReadyZer0/zaincash-dynamic-ui-agent/pull/1) is tracked in [its checklist](docs/CONTINUATION_CHECKLIST.md). Its clean-source Windows suite passed **104/104**, and its clean-source offline **development** run passed **74/74 cases, 80/80 turns**; see [current status](docs/IMPLEMENTATION_STATUS.md) and the [dated report](docs/evaluation-results/20261022_windows_offline.md). After the later Gemini preparation, the expanded suite passed **110/110** and a [new clean-source offline development run](docs/evaluation-results/20261022_gemini_prep_offline.md) passed **74/74 cases, 80/80 turns**. A first [synthetic Gemini smoke](docs/evaluation-results/20261022_gemini_smoke1.md) failed with a provider HTTP error and no ledger change; the compatibility payload was revised and retested locally. A later hidden-key retry failed before any network request; the now clearer validator passed in the expanded **111/111** local suite. No successful Gemini turn is yet claimed. The clean-source debug APK was rebuilt and structurally verified, but has not been run on a phone. The 21 October report above retains its original revision. The [human-review protocol](docs/HUMAN_REVIEW.md) prepares a separate final dataset without representing AI-authored development examples as native-speaker evidence.
 
 ## Focus and roadmap
 

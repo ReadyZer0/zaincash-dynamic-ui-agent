@@ -7,9 +7,9 @@ connected. A model key does not enable real ZainCash transfers.
 
 The default is **offline**. Live model mode uses an OpenAI-compatible Chat
 Completions endpoint with function/tool calling. This adapter has been tested
-against scripted responses and a loopback fake HTTP provider. No actual cloud
-model, dialect accuracy, inference cost or cloud latency is claimed as tested
-until an authorized key and selected model are used.
+against scripted responses and a loopback fake HTTP provider. A first bounded
+Gemini cloud attempt returned a provider HTTP error, so no successful model
+turn, dialect accuracy, or actual token cost is claimed.
 
 ## Choose the endpoint and model
 
@@ -22,6 +22,12 @@ uses this model and endpoint. The adapter returns Gemini's opaque tool-call
 thought signature only within the transient provider conversation, as required
 for multi-step calls; it never enters wallet tools, UI traces or saved chat.
 This is a compatibility implementation, **not a successful live-model test**.
+The first synthetic one-case smoke on 22 October 2026 failed with a provider
+HTTP error and zero ledger changes; [the sanitized report](evaluation-results/20261022_gemini_smoke1.md)
+records the result. The response body was not logged. The adapter now sends
+only the documented function-schema subset, and retains backend validation of
+all model actions. That revision has passed local tests but has not yet passed
+a live smoke.
 
 After confirming that the key belongs to a **free-tier** project in Google AI
 Studio, rotate any credential shared in chat and enter the replacement only
@@ -32,6 +38,12 @@ synthetic smoke process from this checkout:
 ```powershell
 py -3 scripts/ready.py smoke --mode llm --provider gemini --allow-network --limit 1
 ```
+
+On this Windows host, `py` is not on `PATH`; use the bundled Python executable
+instead: `& 'C:\Users\Ready\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' scripts/ready.py smoke --mode llm --provider gemini --allow-network --limit 1`.
+Run it from the repository folder in your own PowerShell so the masked prompt
+is visible. Do not send the key through chat. The first provider attempt used
+one of the five approved requests; at most four remain under that approval.
 
 The preset requires explicit live mode and network opt-in. It has a hard cap of
 **five outbound provider attempts per process**, counting failures; one case

@@ -46,14 +46,21 @@ The user selected Gemini for the first bounded trial. READY now has a Gemini
 launcher preset, an explicit five-outbound-request **per-process** cap,
 free-tier verification instructions, and transient thought-signature support
 for multi-step tool calls. The expanded Windows suite passed **110/110** and
-the offline development evaluator still passed **74/74 cases, 80/80 turns**
-after this change. These are local scripted/transport checks only. The key
-shared in chat was **not copied into source, environment,
-reports, APK or Git** and was not used for a network call. A rotated key must
-be entered through the hidden local prompt. No live Gemini quality, cost,
-latency or compatibility result exists yet; confirm the project's free-tier
-status before even a bounded live smoke. The earlier provider-selection
-statement above describes the state before this later preparation.
+the clean-source offline development evaluator passed **74/74 cases, 80/80
+turns** at source revision `324a7118a1b5f1e01170db4a2521d933420fccc1`;
+see [the dated report](evaluation-results/20261022_gemini_prep_offline.md).
+These are local scripted/transport checks only. The key shared in chat was
+**not copied into source, environment, reports, APK or Git** and was not used
+for a network call. The user confirmed the rotated key's project is free tier
+and entered it in their own masked PowerShell prompt. The first one-case live
+smoke made one outbound attempt and failed with `MODEL_HTTP_ERROR`: **0/1**
+cases passed, **zero** ledger changes; see [the actual failure report](evaluation-results/20261022_gemini_smoke1.md).
+The response body was deliberately not logged, so its cause was not proven.
+The Gemini request was then narrowed to Google's documented function-schema
+subset, omitting the unlisted parallel-call flag; local tests again passed
+**110/110**. No second live result, successful Gemini turn, model-quality or
+cost claim exists yet. The earlier provider-selection statement above describes
+the state before this later preparation.
 
 ## Published implementation — 21 October 2026
 

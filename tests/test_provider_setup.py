@@ -4,7 +4,7 @@ import io
 import json
 import unittest
 
-from llm_agent import GEMINI_BASE_URL, GEMINI_FLASH_MODEL, LLMConfig, OpenAICompatibleClient
+from llm_agent import GEMINI_BASE_URL, GEMINI_FLASH_MODEL, LLMConfig, OpenAICompatibleClient, tool_definitions
 
 
 class ProviderSetupTests(unittest.TestCase):
@@ -22,9 +22,17 @@ class ProviderSetupTests(unittest.TestCase):
         client = OpenAICompatibleClient(config)
         opener = NoNetworkOpener()
         client._opener = opener
-        self.assertEqual(client.complete([{"role": "user", "content": "synthetic"}], [], 2)["content"], "fixture")
+        definitions = tool_definitions()
+        self.assertEqual(client.complete([{"role": "user", "content": "synthetic"}], definitions, 2)["content"], "fixture")
         self.assertEqual(opener.request.full_url, GEMINI_BASE_URL + "/chat/completions")
-        self.assertEqual(json.loads(opener.request.data)["reasoning_effort"], "low")
+        payload = json.loads(opener.request.data)
+        self.assertEqual(payload["reasoning_effort"], "low")
+        self.assertNotIn("parallel_tool_calls", payload)
+        self.assertNotIn("parameters", next(item for item in payload["tools"] if item["function"]["name"] == "VIEW_BALANCE")["function"])
+        transfer = next(item for item in payload["tools"] if item["function"]["name"] == "OPEN_TRANSFER")
+        self.assertNotIn("additionalProperties", transfer["function"]["parameters"])
+        self.assertEqual(transfer["function"]["parameters"]["required"], ["recipient_id", "amount_minor", "currency"])
+        self.assertIn("additionalProperties", next(item for item in definitions if item["function"]["name"] == "OPEN_TRANSFER")["function"]["parameters"])
         self.assertNotIn("test-only-key", opener.request.data.decode("utf-8"))
 
     def test_request_cap_must_be_valid(self):

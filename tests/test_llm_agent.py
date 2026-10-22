@@ -392,7 +392,7 @@ class TransportTests(unittest.TestCase):
             self.assertFalse(captured[0]["body"]["enable_thinking"])
             with self.assertRaises(AgentError) as raised:
                 client.complete([{"role": "user", "content": "again"}], tool_definitions(), 2)
-            self.assertEqual(raised.exception.code, "MODEL_HTTP_ERROR")
+            self.assertEqual(raised.exception.code, "MODEL_HTTP_307")
             self.assertEqual(len(captured), 2)
             with self.assertRaises(AgentError) as exhausted:
                 OpenAICompatibleClient(config).complete([{"role": "user", "content": "third"}], tool_definitions(), 2)

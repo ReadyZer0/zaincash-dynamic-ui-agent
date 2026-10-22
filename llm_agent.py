@@ -217,6 +217,32 @@ def _strict_json(raw: str) -> Any:
     return json.loads(raw, object_pairs_hook=pairs, parse_constant=invalid_constant)
 
 
+def _gemini_tool_definitions(definitions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Send Gemini's documented function-schema subset; validate locally as before."""
+    converted: list[dict[str, Any]] = []
+    for item in definitions:
+        function = item["function"]
+        parameters = function["parameters"]
+        gemini_function: dict[str, Any] = {
+            "name": function["name"], "description": function["description"]
+        }
+        properties = parameters["properties"]
+        if properties:
+            gemini_parameters: dict[str, Any] = {
+                "type": "object",
+                "properties": {
+                    name: {key: value for key, value in spec.items()
+                           if key in {"type", "description", "enum"}}
+                    for name, spec in properties.items()
+                },
+            }
+            if parameters["required"]:
+                gemini_parameters["required"] = parameters["required"]
+            gemini_function["parameters"] = gemini_parameters
+        converted.append({"type": "function", "function": gemini_function})
+    return converted
+
+
 class OpenAICompatibleClient:
     """Small no-retry transport; provider bodies never become public errors."""
 
@@ -229,17 +255,19 @@ class OpenAICompatibleClient:
         error = self.config.configuration_error()
         if error or self.config.mode != "llm":
             raise AgentError("MODEL_NOT_CONFIGURED", error or "Live model mode is not enabled.")
+        is_gemini = self.config.base_url.rstrip("/") == GEMINI_BASE_URL and self.config.model == GEMINI_FLASH_MODEL
         payload: dict[str, Any] = {
             "model": self.config.model,
             "messages": messages,
-            "tools": tools,
+            "tools": _gemini_tool_definitions(tools) if is_gemini else tools,
             "tool_choice": "auto",
-            "parallel_tool_calls": False,
             "max_tokens": 1_024,
             "stream": False,
         }
-        if self.config.base_url.rstrip("/") == GEMINI_BASE_URL and self.config.model == GEMINI_FLASH_MODEL:
+        if is_gemini:
             payload["reasoning_effort"] = "low"
+        else:
+            payload["parallel_tool_calls"] = False
         if self.config.enable_thinking is not None:
             payload["enable_thinking"] = self.config.enable_thinking
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
@@ -274,7 +302,7 @@ class OpenAICompatibleClient:
             elif error.code == 429:
                 code, detail = "MODEL_RATE_LIMIT", "The model provider is rate limited or its quota is exhausted. Try again later."
             else:
-                code, detail = "MODEL_HTTP_ERROR", "The provider rejected the model request. Check the backend model and endpoint settings."
+                code, detail = f"MODEL_HTTP_{error.code}", "The provider rejected the model request. Check the backend model and endpoint settings."
             raise AgentError(code, detail) from None
         except (TimeoutError, socket.timeout):
             raise AgentError("MODEL_TIMEOUT", "The model timed out. No payment was executed.") from None

@@ -13,7 +13,7 @@ Starting point: PR #1, open/draft/unmerged, head `4eae03bf40a1f9bc4c3c175dfc118a
 - [x] Align evaluation documentation on 5–8 observed sessions; provide reviewer templates and a frozen-dataset validation workflow. No participants or held-out results are invented.
 - [ ] Run fresh narrow/wide browser workflows against a disposable synthetic database and inspect screenshots. The in-app browser's URL security gate denied the loopback tab; do not bypass that gate with another browser route. Source/API tests ran, but fresh visual verification remains open.
 - [x] Update current-versus-planned evidence, brief/demo material and setup docs. The original historical report and deck remain intact.
-- [ ] Commit meaningful changes and publish a reviewable continuation branch/PR; do not merge PR #1.
+- [x] Commit meaningful changes and publish [draft PR #2](https://github.com/ReadyZer0/zaincash-dynamic-ui-agent/pull/2) from `feat/windows-continuation` against the unmerged PR #1 branch; neither PR was merged.
 
 ## External inputs / gates
 

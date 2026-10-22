@@ -14,7 +14,8 @@ credential, so this is not production secret isolation.
 The full synthetic local suite passed **119 tests** (**118 passed, one opt-in
 credential-store roundtrip skipped**) after this change. The opt-in Windows
 roundtrip separately passed **2/2** tests with a uniquely named synthetic key
-that was deleted in test cleanup. Python compilation, `ready.py check`, and
+that was deleted in test cleanup. The tested code was committed as `7b4607c`
+on the draft PR #2 branch. Python compilation, `ready.py check`, and
 `git diff --check` passed. A real key was **not** entered or saved; the
 Windows credential status was "not saved". The first Gemini provider attempt
 remains the only one made, and it failed; **four of five** previously approved

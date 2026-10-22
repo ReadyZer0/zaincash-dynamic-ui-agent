@@ -21,6 +21,7 @@
 | Model invents a tool or changes an amount/recipient | Validate the complete tool batch before dispatch; require fresh owner-scoped lookup; ground recipient/bill/amount in user words. Conservative guards may ask extra questions. |
 | Provider redirects an Authorization header | Provider client rejects redirects. Remote endpoints require HTTPS; only a literal loopback model endpoint may use HTTP. |
 | API key leaks into APK/model context | Key is a backend environment value, excluded from repr/status/tool history. No client key field or bundled key. Raw provider errors are redacted. |
+| Saved Gemini key exposed through app settings | Only the foreground backend launcher can read the current Windows user's named Credential Manager entry after explicit live/network opt-in. Browser/APK routes have no key field. Same-user local processes can still read the credential; use a limited free-tier key and rotate if the host is compromised. |
 | Infinite agent loop, slow call or concurrent turn | Four model rounds, eight tool calls and bounded timeout; fixed session lock stripes; explicit failure, no automatic retry/fallback. |
 | Model says payment succeeded without execution | Server owns reviews/receipts; prepare ends with canonical wording; unsupported obvious success prose is replaced. Generated prose is never a receipt. |
 | Risk log fails after a committed debit | Return authoritative receipt and mark advisory recording unavailable. The financial record, not an advisory write, controls retries. |

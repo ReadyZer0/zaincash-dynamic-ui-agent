@@ -17,6 +17,7 @@ REPO = Path(__file__).resolve().parents[1]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
+import backend_credentials
 from llm_agent import GEMINI_BASE_URL, GEMINI_FLASH_MODEL, LLMConfig
 
 
@@ -38,13 +39,13 @@ def prerequisites() -> list[tuple[str, bool, str]]:
     return checks
 
 
-def hidden_key() -> str:
+def hidden_key(prompt: str = "Backend model API key (hidden, process only): ") -> str:
     # getpass otherwise falls back to echoed stdin on unsupported terminals.
     # Fail closed instead of accidentally displaying a credential.
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", getpass.GetPassWarning)
-            return getpass.getpass("Backend model API key (hidden, process only): ").strip()
+            return getpass.getpass(prompt).strip()
     except (getpass.GetPassWarning, EOFError) as error:
         raise ValueError("Hidden key entry is unavailable. Use an interactive local terminal; never paste the key into chat.") from error
 
@@ -64,8 +65,7 @@ def runtime_environment(mode: str, allow_network: bool, provider: str = "custom"
             # This vendor-specific flag may be left over from a different
             # compatible provider and is not part of the Gemini preset.
             os.environ.pop("READY_LLM_ENABLE_THINKING", None)
-            # Always enter a fresh key privately; do not reuse an inherited or
-            # accidentally exposed credential from this terminal.
+            # Do not reuse an inherited or accidentally exposed credential.
             os.environ.pop("READY_LLM_API_KEY", None)
         elif provider != "custom":
             raise ValueError("Unsupported provider preset.")
@@ -81,10 +81,15 @@ def runtime_environment(mode: str, allow_network: bool, provider: str = "custom"
             if error := LLMConfig.from_env(preview).configuration_error():
                 raise ValueError(error)
             if not os.environ.get("READY_LLM_API_KEY"):
-                entered_key = hidden_key()
+                entered_key = backend_credentials.read_key() if provider == "gemini" and sys.platform == "win32" else None
+                from_store = entered_key is not None
+                if entered_key is None:
+                    entered_key = hidden_key()
                 candidate = dict(os.environ)
                 candidate["READY_LLM_API_KEY"] = entered_key
                 if error := LLMConfig.from_env(candidate).configuration_error():
+                    if from_store:
+                        raise ValueError("The saved Gemini key is invalid; replace it with settings --provider gemini --set-key.")
                     raise ValueError(error)
                 os.environ["READY_LLM_API_KEY"] = entered_key
             if error := LLMConfig.from_env().configuration_error():
@@ -98,16 +103,50 @@ def runtime_environment(mode: str, allow_network: bool, provider: str = "custom"
                 os.environ[name] = value
 
 
+def manage_gemini_key(set_key: bool, clear_key: bool) -> None:
+    """Manage only the backend Windows credential; never contact a provider."""
+    if set_key:
+        if sys.platform != "win32":
+            raise ValueError("Saved Gemini keys are supported only on Windows; use the hidden per-run prompt here.")
+        entered_key = hidden_key("Gemini API key (hidden; save for this Windows user): ")
+        candidate = LLMConfig(mode="llm", base_url=GEMINI_BASE_URL,
+                              model=GEMINI_FLASH_MODEL, api_key=entered_key, request_cap=5)
+        if error := candidate.configuration_error():
+            raise ValueError(error)
+        backend_credentials.save_key(entered_key)
+        print("Gemini key saved in Windows Credential Manager for this user. No model request was made.")
+    elif clear_key:
+        removed = backend_credentials.delete_key()
+        print("Saved Gemini key removed." if removed else "No saved Gemini key was present.")
+    else:
+        present = backend_credentials.read_key() is not None
+        print("Gemini key: saved for this Windows user." if present else "Gemini key: not saved. No model request was made.")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("check", "serve", "smoke"))
+    parser.add_argument("command", choices=("check", "serve", "smoke", "settings"))
     parser.add_argument("--mode", choices=("offline", "llm"), default="offline")
     parser.add_argument("--provider", choices=("custom", "gemini"), default="custom")
     parser.add_argument("--allow-network", action="store_true")
     parser.add_argument("--limit", type=int, default=5, help="Smoke cases, 1–5; use the full evaluator separately for larger approved runs")
+    key_actions = parser.add_mutually_exclusive_group()
+    key_actions.add_argument("--set-key", action="store_true", help="Save a Gemini key via hidden prompt in Windows Credential Manager")
+    key_actions.add_argument("--clear-key", action="store_true", help="Remove only READY's saved Gemini key")
     args = parser.parse_args(argv)
     if not 1 <= args.limit <= 5:
         parser.error("--limit must be between 1 and 5")
+    if args.command != "settings" and (args.set_key or args.clear_key):
+        parser.error("--set-key and --clear-key are only available with settings")
+    if args.command == "settings":
+        if args.provider != "gemini" or args.mode != "offline" or args.allow_network:
+            parser.error("Gemini settings require --provider gemini and do not accept live/network flags")
+        try:
+            manage_gemini_key(args.set_key, args.clear_key)
+            return 0
+        except ValueError as error:
+            print(f"Setup error: {error}", file=sys.stderr)
+            return 2
     checks = prerequisites()
     for name, ok, remedy in checks:
         print(f"{'OK' if ok else 'MISSING'}: {name}" + (f" — {remedy}" if not ok else ""))

@@ -1,5 +1,28 @@
 # Implementation and verification — 21 October 2026
 
+## Backend Gemini key setting — 22 October 2026 (Asia/Baghdad)
+
+The foreground launcher now has a backend-only Windows
+`settings --provider gemini --set-key` path. It uses hidden local entry and Windows Credential
+Manager under the current user; no key is saved in the repository, SQLite,
+browser or APK. Status reveals only presence, and `--clear-key` removes only
+READY's named entry. The saved key is read only after explicit
+`--mode llm --provider gemini --allow-network`; offline mode and final mock-payment Confirm
+are unchanged. Same-user local processes can still read their own Windows
+credential, so this is not production secret isolation.
+
+The full synthetic local suite passed **119 tests** (**118 passed, one opt-in
+credential-store roundtrip skipped**) after this change. The opt-in Windows
+roundtrip separately passed **2/2** tests with a uniquely named synthetic key
+that was deleted in test cleanup. Python compilation, `ready.py check`, and
+`git diff --check` passed. A real key was **not** entered or saved; the
+Windows credential status was "not saved". The first Gemini provider attempt
+remains the only one made, and it failed; **four of five** previously approved
+free-tier synthetic attempts remain. There is no new model result or wallet
+debit. The guarded Ruff launcher refused this isolated checkout, so no Ruff
+result is claimed. No UI changed, and no new browser/device inspection was
+performed.
+
 ## Windows continuation — 22 October 2026 (Asia/Baghdad)
 
 This section reports the **new** Windows continuation of draft PR #1 on

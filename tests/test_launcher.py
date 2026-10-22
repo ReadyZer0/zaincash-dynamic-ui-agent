@@ -18,7 +18,7 @@ class LauncherTests(unittest.TestCase):
     def test_gemini_preset_uses_five_request_cap_and_fresh_hidden_key(self):
         inherited = {"READY_LLM_API_KEY": "old-exposed-key", "READY_LLM_BASE_URL": "https://old.example/v1",
                      "READY_LLM_ENABLE_THINKING": "true"}
-        with patch.dict(os.environ, inherited, clear=True), patch("scripts.ready.hidden_key", return_value="new-test-only-key"):
+        with patch.dict(os.environ, inherited, clear=True), patch("scripts.ready.hidden_key", return_value="new-test-only-key"), patch("scripts.ready.backend_credentials.read_key", return_value=None):
             with runtime_environment("llm", True, "gemini"):
                 self.assertEqual(os.environ["READY_LLM_BASE_URL"], GEMINI_BASE_URL)
                 self.assertEqual(os.environ["READY_LLM_MODEL"], GEMINI_FLASH_MODEL)
@@ -38,6 +38,33 @@ class LauncherTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "allow-network"):
                 with runtime_environment("llm", False, "gemini"):
                     self.fail("Preset accepted network without opt-in")
+
+    def test_saved_gemini_key_requires_live_opt_in_and_never_prompts(self):
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("scripts.ready.backend_credentials.read_key", return_value="stored-test-only-key") as read,
+            patch("scripts.ready.hidden_key", side_effect=AssertionError("Must use stored key")),
+        ):
+            with self.assertRaisesRegex(ValueError, "allow-network"):
+                with runtime_environment("llm", False, "gemini"):
+                    self.fail("Started without opt-in")
+            read.assert_not_called()
+            with runtime_environment("llm", True, "gemini"):
+                self.assertEqual(os.environ["READY_LLM_API_KEY"], "stored-test-only-key")
+            self.assertNotIn("READY_LLM_API_KEY", os.environ)
+            read.assert_called_once_with()
+
+    def test_invalid_saved_key_is_rejected_without_environment_storage(self):
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("scripts.ready.backend_credentials.read_key", return_value="fixture\u200bkey"),
+            patch("scripts.ready.hidden_key", side_effect=AssertionError("Do not prompt")),
+            self.assertRaisesRegex(ValueError, "replace it with settings") as raised,
+        ):
+            with runtime_environment("llm", True, "gemini"):
+                self.fail("Invalid saved key was accepted")
+            self.assertNotIn("READY_LLM_API_KEY", os.environ)
+        self.assertNotIn("fixture\u200bkey", str(raised.exception))
 
     def test_offline_overrides_inherited_live_mode_and_restores_environment(self):
         with (
@@ -96,12 +123,58 @@ class LauncherTests(unittest.TestCase):
 
     def test_invalid_pasted_key_is_rejected_before_environment_storage(self):
         invalid_fixture = "fixture\u200bkey"
-        with patch.dict(os.environ, {}, clear=True), patch("scripts.ready.hidden_key", return_value=invalid_fixture):
+        with patch.dict(os.environ, {}, clear=True), patch("scripts.ready.hidden_key", return_value=invalid_fixture), patch("scripts.ready.backend_credentials.read_key", return_value=None):
             with self.assertRaisesRegex(ValueError, "non-ASCII") as raised:
                 with runtime_environment("llm", True, "gemini"):
                     self.fail("Invalid credential was accepted")
             self.assertNotIn(invalid_fixture, str(raised.exception))
             self.assertNotIn("READY_LLM_API_KEY", os.environ)
+
+    def test_settings_status_reports_presence_only(self):
+        output = io.StringIO()
+        with (
+            patch("scripts.ready.backend_credentials.read_key", return_value="stored-test-only-key"),
+            patch("scripts.ready.runpy.run_path", side_effect=AssertionError("Do not start")),
+            redirect_stdout(output),
+        ):
+            self.assertEqual(main(["settings", "--provider", "gemini"]), 0)
+        self.assertIn("saved", output.getvalue())
+        self.assertNotIn("stored-test-only-key", output.getvalue())
+
+    def test_settings_save_validates_before_writing_and_never_calls_model(self):
+        output = io.StringIO()
+        with (
+            patch("scripts.ready.hidden_key", return_value="new-test-only-key"),
+            patch("scripts.ready.backend_credentials.save_key") as save,
+            patch("scripts.ready.runpy.run_path", side_effect=AssertionError("Do not start")),
+            redirect_stdout(output),
+        ):
+            self.assertEqual(main(["settings", "--provider", "gemini", "--set-key"]), 0)
+            save.assert_called_once_with("new-test-only-key")
+        self.assertNotIn("new-test-only-key", output.getvalue())
+
+    def test_settings_rejects_invalid_key_before_writing(self):
+        output = io.StringIO()
+        with (
+            patch("scripts.ready.hidden_key", return_value="fixture\u200bkey"),
+            patch("scripts.ready.backend_credentials.save_key", side_effect=AssertionError("Must not write")),
+            redirect_stdout(output),
+            patch("sys.stderr", new_callable=io.StringIO) as stderr,
+        ):
+            self.assertEqual(main(["settings", "--provider", "gemini", "--set-key"]), 2)
+        self.assertIn("non-ASCII", stderr.getvalue())
+        self.assertNotIn("fixture\u200bkey", stderr.getvalue())
+
+    def test_settings_cannot_be_combined_with_network_or_server(self):
+        with (
+            patch("scripts.ready.hidden_key", side_effect=AssertionError("Must not prompt")),
+            redirect_stdout(io.StringIO()),
+            patch("sys.stderr", new_callable=io.StringIO),
+        ):
+            with self.assertRaises(SystemExit):
+                main(["settings", "--provider", "gemini", "--allow-network", "--set-key"])
+            with self.assertRaises(SystemExit):
+                main(["serve", "--set-key"])
 
     def test_check_never_starts_backend_or_prompts(self):
         with (

@@ -32,21 +32,43 @@ a live smoke.
 After confirming that the key belongs to a **free-tier** project in Google AI
 Studio, rotate any credential shared in chat and enter the replacement only
 through the hidden local prompt. Do not place it in a file, command argument,
-repository, screenshot, mobile chat or message to Codex. Run **one** bounded
-synthetic smoke process from this checkout:
+repository, screenshot, mobile chat or message to Codex. On Windows, the
+backend-only `settings` command can save the replacement in Windows Credential
+Manager for the current Windows user. It does not contact Gemini, enable live
+mode, or put the key in the browser/APK:
+
+```powershell
+Set-Location 'PATH_TO_READY_REPOSITORY'
+py -3 scripts/ready.py settings --provider gemini --set-key
+py -3 scripts/ready.py settings --provider gemini
+```
+
+Run **one** bounded synthetic smoke process from this checkout after saving:
 
 ```powershell
 py -3 scripts/ready.py smoke --mode llm --provider gemini --allow-network --limit 1
 ```
 
-On this Windows host, `py` is not on `PATH`; use the bundled Python executable
-instead: `& 'C:\Users\Ready\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' scripts/ready.py smoke --mode llm --provider gemini --allow-network --limit 1`.
-Run it from the repository folder in your own PowerShell so the masked prompt
-is visible. Do not send the key through chat. The first provider attempt used
+On this Windows host, `py` is not on `PATH`; replace `py -3` in the commands
+above with `& 'C:\Users\Ready\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe'`.
+Run `Set-Location` first and enter the replacement in your own PowerShell so
+the masked prompt is visible. The launcher uses the saved key only for an
+explicit `--mode llm --provider gemini --allow-network` run. Without a saved
+key, it still asks via a hidden per-run prompt. To remove READY's saved key,
+run `py -3 scripts/ready.py settings --provider gemini --clear-key` (using the
+bundled Python executable on this host). Windows Credential Manager protects
+the key from repository files and other Windows users, but programs running
+as the **same** Windows user can read it. Use a dedicated free-tier key with
+limited quota; rotate it if the computer or account is compromised. The
+settings command only validates key shape, not provider authorization or tier.
+Codex's restricted shell may deny Credential Manager access; use your own
+interactive PowerShell for `settings` and the bounded smoke command.
+Do not send the key through chat. The first provider attempt used
 one of the five approved requests; at most four remain under that approval.
 If local setup rejects the entered credential, no request was sent. Re-copy
-only the raw replacement key: the validator accepts ASCII text without control
-characters, up to 4,096 characters. Do not retry the credential exposed in
+only the raw replacement key: the runtime validator accepts ASCII text without
+control characters, up to 4,096 characters; Windows Credential Manager limits
+a saved key to 2,560 bytes. Do not retry the credential exposed in
 chat or a key already revoked in Google AI Studio.
 
 The preset requires explicit live mode and network opt-in. It has a hard cap of
@@ -62,8 +84,9 @@ payment credential or customer data is suitable for this trial.
 
 If the smoke result is satisfactory and a separate running-session budget is
 approved, `py -3 scripts/ready.py serve --mode llm --provider gemini --allow-network`
-starts the app with another hidden key prompt. The server still cannot let the
-model confirm or commit a payment; the final Confirm remains server-owned.
+starts the app with the saved backend key (or another hidden prompt if none is
+saved). The server still cannot let the model confirm or commit a payment; the
+final Confirm remains server-owned.
 
 ### Other compatible providers
 

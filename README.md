@@ -41,13 +41,15 @@ Follow [LLM_SETUP.md](docs/LLM_SETUP.md) for Windows/Linux commands with a hidde
 Use the actual endpoint/model from the provider console. Alibaba Qwen's compatible API is a documented candidate; no specific cloud model quality or compatibility result is claimed yet. Local compatible loopback model servers are supported. The app distinguishes configuration present from a successful model request. A failed call never silently becomes an offline result. `.env` files are not loaded automatically.
 
 A Gemini trial preset is now available through `scripts/ready.py` with a hidden
-key prompt and a five-outbound-request process cap. It remains **off** unless
+key prompt, an optional backend-only Windows Credential Manager setting, and a
+five-outbound-request process cap. It remains **off** unless
 `--mode llm --provider gemini --allow-network` is supplied. See
 [Gemini setup and key rotation](docs/LLM_SETUP.md#gemini-trial-preset-prepared-22-october-2026).
 One synthetic Gemini smoke request subsequently returned a provider HTTP
 error; no successful model turn or model-quality result is claimed. A later
 retry failed local key validation before any network request. The key pasted
-in chat was not reused; see the setup guide for fresh hidden-key entry.
+in chat was not reused; see the setup guide for fresh hidden-key entry. The
+saved-key setting does not call a model or enable payments by itself.
 
 ### Android APK
 

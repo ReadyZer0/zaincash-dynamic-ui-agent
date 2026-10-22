@@ -24,6 +24,13 @@ Provider key, CSRF value and approval credential never enter tool results or
 model history. A failed provider call produces an explicit error; no silent
 offline fallback is performed.
 
+The foreground Windows launcher may read a Gemini key saved by its separate
+backend-only `settings` command in the current user's Windows Credential
+Manager. It does so only after explicit live-mode and network opt-in. The
+browser, Android client, SQLite wallet and model tools have no credential-store
+route. The same Windows user can still access its own saved credential; this
+is a local prototype setting, not production secret isolation.
+
 The model must look up current owner-scoped contacts/bills. The requested
 recipient and amount are checked against user-only request evidence before a
 transfer is prepared. Unsupported language can cause an extra clarification;

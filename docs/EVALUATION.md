@@ -9,6 +9,10 @@ development findings, not live-model or held-out accuracy. The latest evaluator
 also checks all-owner provider results and saved plans, exact review fields,
 strict assertion schemas and conservative reply-quality flags.
 
+See the [22 October evidence summary](evaluation-results/20261022_harness_summary.md)
+for the final clean-commit reruns, unchanged misses, 102 automated tests and
+10/10 mock workflow results. Raw JSON reports remain paired with readable reports.
+
 The previous [clean-commit offline report](evaluation-results/20261021_offline_final.md)
 records 74/74 cases and 80/80 turns on published implementation commit `157c46a5`.
 It remains regression evidence for that smaller development set. The earlier

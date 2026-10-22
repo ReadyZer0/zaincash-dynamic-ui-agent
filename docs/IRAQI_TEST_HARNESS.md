@@ -143,6 +143,10 @@ the repository README.
 
 ## First findings and required fixes
 
+The [22 October evidence summary](evaluation-results/20261022_harness_summary.md)
+links all final reports from clean implementation commit `6fe565e`, the
+102-test verification and the 10/10 mock workflow result.
+
 The first local 200-case run passed **187/200 cases and 211/224 turns**. It made
 no committed ledger changes during chat, but produced **six incorrect payment
 reviews**. These are development results from the deterministic router, not

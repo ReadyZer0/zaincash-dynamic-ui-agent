@@ -1,0 +1,1906 @@
+{
+  "schema_version": "ready-mock-api-workflows-v1",
+  "run_at_utc": "2026-10-22T09:09:32.062539+00:00",
+  "evaluation_type": "deterministic_mock_api_workflows",
+  "agent_mode": "offline",
+  "uses_live_model": false,
+  "human_reviewed": false,
+  "held_out": false,
+  "claim_boundary": "Deterministic mock API-handler workflows with separate trusted Confirm calls. No live model, browser, HTTP/CSRF/cookie, Android, or real-payment validation is claimed. Iraqi-Arabic inputs are AI-authored development fixtures, not a human-reviewed or held-out dialect evaluation.",
+  "source": {
+    "commit": "6fe565e08c41156a37b19059721db27a783b2c2a",
+    "working_tree_dirty": false,
+    "source_fingerprint_sha256": "50cc60c47a306f0c45775071df3df37b50d83c191002cf564e031fa9acac144c"
+  },
+  "summary": {
+    "scenarios": 10,
+    "passed": 10,
+    "failed": 0,
+    "assertions": 270
+  },
+  "results": [
+    {
+      "id": "WF001",
+      "title_ar_iq": "اختيار علي الصحيح ثم تأكيد التحويل",
+      "expected_final": {
+        "balances": {
+          "demo_amina": 99750,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 1,
+        "new_successful_transactions": 1
+      },
+      "passed": true,
+      "events": [
+        {
+          "event": "chat",
+          "message_ar_iq": "حول ٥٠ ألف لعلي",
+          "duration_ms": 10.19,
+          "observed": {
+            "clarification_field": "recipient",
+            "choice_ids": [
+              "contact_ali_diaa",
+              "contact_ali_mohammed"
+            ]
+          }
+        },
+        {
+          "event": "chat",
+          "message_ar_iq": "علي ضياء",
+          "duration_ms": 11.04,
+          "observed": {
+            "draft": {
+              "id": "draft_fdd3c9f6d7fd4cecbc3718e8c4ca1d4b",
+              "kind": "transfer",
+              "state": "AWAITING_CONFIRMATION",
+              "version": 1,
+              "can_confirm": true
+            },
+            "review": {
+              "recipient_or_biller": "علي ضياء",
+              "amount_minor": 50000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 50250
+            }
+          }
+        },
+        {
+          "event": "trusted_confirm_handler",
+          "draft_id": "draft_fdd3c9f6d7fd4cecbc3718e8c4ca1d4b",
+          "duration_ms": 3.2,
+          "observed": {
+            "draft": {
+              "id": "draft_fdd3c9f6d7fd4cecbc3718e8c4ca1d4b",
+              "kind": "transfer",
+              "state": "SUCCEEDED",
+              "version": 1,
+              "can_confirm": false
+            },
+            "review": {
+              "recipient_or_biller": "علي ضياء",
+              "amount_minor": 50000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 50250
+            },
+            "transaction": {
+              "id": "txn_b12ba6c3c7ea4f25bccf8da7ffdb89bf",
+              "reference": "MOCK-EB13790A4EC8",
+              "status": "SUCCEEDED",
+              "debit_minor": 50250,
+              "counterparty": "علي ضياء",
+              "currency": "IQD",
+              "duplicate": false
+            },
+            "has_receipt": true,
+            "available_minor": 99750
+          }
+        }
+      ],
+      "assertions": [
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "chat_never_returns_completed_transaction",
+          "passed": true
+        },
+        {
+          "label": "chat_keeps_both_owners_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "ambiguous_recipient_has_no_draft",
+          "passed": true
+        },
+        {
+          "label": "asks_which_ali",
+          "passed": true
+        },
+        {
+          "label": "offers_only_current_owner_ali_choices",
+          "passed": true
+        },
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "chat_never_returns_completed_transaction",
+          "passed": true
+        },
+        {
+          "label": "chat_keeps_both_owners_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "issued_payment_review",
+          "passed": true
+        },
+        {
+          "label": "review_exact_recipient_or_biller",
+          "passed": true
+        },
+        {
+          "label": "review_exact_amount_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_currency",
+          "passed": true
+        },
+        {
+          "label": "review_exact_fee_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_total_debit_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_kind",
+          "passed": true
+        },
+        {
+          "label": "review_offers_separate_confirm",
+          "passed": true
+        },
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "confirmed_transaction_succeeded",
+          "passed": true
+        },
+        {
+          "label": "confirmed_recipient_matches_review",
+          "passed": true
+        },
+        {
+          "label": "confirmed_debit_matches_review",
+          "passed": true
+        },
+        {
+          "label": "confirmed_currency_iqd",
+          "passed": true
+        },
+        {
+          "label": "receipt_identifies_original_transaction",
+          "passed": true
+        },
+        {
+          "label": "receipt_reference_matches_transaction",
+          "passed": true
+        },
+        {
+          "label": "receipt_debit_matches_review",
+          "passed": true
+        },
+        {
+          "label": "final_exact_balances",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_transactions",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_successful_transactions",
+          "passed": true
+        },
+        {
+          "label": "expected_domain_rejections_observed",
+          "passed": true
+        },
+        {
+          "label": "seeded_history_rows_preserved",
+          "passed": true
+        }
+      ],
+      "observed_final": {
+        "balances": {
+          "demo_amina": 99750,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 1,
+        "new_successful_transactions": 1,
+        "new_transaction_ids": [
+          "txn_b12ba6c3c7ea4f25bccf8da7ffdb89bf"
+        ]
+      },
+      "duration_ms": 59.07
+    },
+    {
+      "id": "WF002",
+      "title_ar_iq": "فاتورة حسن ومراجعتها وتأكيدها",
+      "expected_final": {
+        "balances": {
+          "demo_amina": 150000,
+          "demo_hassan": 69500
+        },
+        "new_transactions": 1,
+        "new_successful_transactions": 1
+      },
+      "passed": true,
+      "events": [
+        {
+          "event": "chat",
+          "message_ar_iq": "فاتورة الموبايل أريد أدفعها",
+          "duration_ms": 6.0,
+          "observed": {
+            "draft": {
+              "id": "draft_a010d649d6a443d1b439ead112c16812",
+              "kind": "bill_payment",
+              "state": "AWAITING_CONFIRMATION",
+              "version": 1,
+              "can_confirm": true
+            },
+            "review": {
+              "recipient_or_biller": "فاتورة موبايل تجريبية",
+              "amount_minor": 18000,
+              "currency": "IQD",
+              "fee_minor": 0,
+              "total_debit_minor": 18000
+            }
+          }
+        },
+        {
+          "event": "trusted_confirm_handler",
+          "draft_id": "draft_a010d649d6a443d1b439ead112c16812",
+          "duration_ms": 3.12,
+          "observed": {
+            "draft": {
+              "id": "draft_a010d649d6a443d1b439ead112c16812",
+              "kind": "bill_payment",
+              "state": "SUCCEEDED",
+              "version": 1,
+              "can_confirm": false
+            },
+            "review": {
+              "recipient_or_biller": "فاتورة موبايل تجريبية",
+              "amount_minor": 18000,
+              "currency": "IQD",
+              "fee_minor": 0,
+              "total_debit_minor": 18000
+            },
+            "transaction": {
+              "id": "txn_65833ab20f874edabffe106ffdea6dab",
+              "reference": "MOCK-BEF2DF8BEBD6",
+              "status": "SUCCEEDED",
+              "debit_minor": 18000,
+              "counterparty": "فاتورة موبايل تجريبية",
+              "currency": "IQD",
+              "duplicate": false
+            },
+            "has_receipt": true,
+            "available_minor": 69500
+          }
+        }
+      ],
+      "assertions": [
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "chat_never_returns_completed_transaction",
+          "passed": true
+        },
+        {
+          "label": "chat_keeps_both_owners_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "issued_payment_review",
+          "passed": true
+        },
+        {
+          "label": "review_exact_recipient_or_biller",
+          "passed": true
+        },
+        {
+          "label": "review_exact_amount_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_currency",
+          "passed": true
+        },
+        {
+          "label": "review_exact_fee_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_total_debit_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_kind",
+          "passed": true
+        },
+        {
+          "label": "review_offers_separate_confirm",
+          "passed": true
+        },
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "confirmed_transaction_succeeded",
+          "passed": true
+        },
+        {
+          "label": "confirmed_recipient_matches_review",
+          "passed": true
+        },
+        {
+          "label": "confirmed_debit_matches_review",
+          "passed": true
+        },
+        {
+          "label": "confirmed_currency_iqd",
+          "passed": true
+        },
+        {
+          "label": "receipt_identifies_original_transaction",
+          "passed": true
+        },
+        {
+          "label": "receipt_reference_matches_transaction",
+          "passed": true
+        },
+        {
+          "label": "receipt_debit_matches_review",
+          "passed": true
+        },
+        {
+          "label": "final_exact_balances",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_transactions",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_successful_transactions",
+          "passed": true
+        },
+        {
+          "label": "expected_domain_rejections_observed",
+          "passed": true
+        },
+        {
+          "label": "seeded_history_rows_preserved",
+          "passed": true
+        }
+      ],
+      "observed_final": {
+        "balances": {
+          "demo_amina": 150000,
+          "demo_hassan": 69500
+        },
+        "new_transactions": 1,
+        "new_successful_transactions": 1,
+        "new_transaction_ids": [
+          "txn_65833ab20f874edabffe106ffdea6dab"
+        ]
+      },
+      "duration_ms": 47.27
+    },
+    {
+      "id": "WF003",
+      "title_ar_iq": "كلمة كمل ما تنفذ التحويل",
+      "expected_final": {
+        "balances": {
+          "demo_amina": 150000,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 0,
+        "new_successful_transactions": 0
+      },
+      "passed": true,
+      "events": [
+        {
+          "event": "chat",
+          "message_ar_iq": "حول ١٠ آلاف لعلي ضياء",
+          "duration_ms": 7.58,
+          "observed": {
+            "draft": {
+              "id": "draft_7c486b55528c43e89e6a2f1352f32ce8",
+              "kind": "transfer",
+              "state": "AWAITING_CONFIRMATION",
+              "version": 1,
+              "can_confirm": true
+            },
+            "review": {
+              "recipient_or_biller": "علي ضياء",
+              "amount_minor": 10000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 10250
+            }
+          }
+        },
+        {
+          "event": "chat",
+          "message_ar_iq": "كمل",
+          "duration_ms": 1.67,
+          "observed": {}
+        }
+      ],
+      "assertions": [
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "chat_never_returns_completed_transaction",
+          "passed": true
+        },
+        {
+          "label": "chat_keeps_both_owners_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "issued_payment_review",
+          "passed": true
+        },
+        {
+          "label": "review_exact_recipient_or_biller",
+          "passed": true
+        },
+        {
+          "label": "review_exact_amount_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_currency",
+          "passed": true
+        },
+        {
+          "label": "review_exact_fee_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_total_debit_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_kind",
+          "passed": true
+        },
+        {
+          "label": "review_offers_separate_confirm",
+          "passed": true
+        },
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "chat_never_returns_completed_transaction",
+          "passed": true
+        },
+        {
+          "label": "chat_keeps_both_owners_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "typed_approval_does_not_issue_a_new_review",
+          "passed": true
+        },
+        {
+          "label": "final_exact_balances",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_transactions",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_successful_transactions",
+          "passed": true
+        },
+        {
+          "label": "expected_domain_rejections_observed",
+          "passed": true
+        },
+        {
+          "label": "seeded_history_rows_preserved",
+          "passed": true
+        }
+      ],
+      "observed_final": {
+        "balances": {
+          "demo_amina": 150000,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 0,
+        "new_successful_transactions": 0,
+        "new_transaction_ids": []
+      },
+      "duration_ms": 56.44
+    },
+    {
+      "id": "WF004",
+      "title_ar_iq": "الإلغاء يبطل التأكيد القديم",
+      "expected_final": {
+        "balances": {
+          "demo_amina": 150000,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 0,
+        "new_successful_transactions": 0
+      },
+      "passed": true,
+      "events": [
+        {
+          "event": "chat",
+          "message_ar_iq": "حول ١٠ آلاف لعلي ضياء",
+          "duration_ms": 6.85,
+          "observed": {
+            "draft": {
+              "id": "draft_7ee2deaf31b24040878e88ff56cd0c69",
+              "kind": "transfer",
+              "state": "AWAITING_CONFIRMATION",
+              "version": 1,
+              "can_confirm": true
+            },
+            "review": {
+              "recipient_or_biller": "علي ضياء",
+              "amount_minor": 10000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 10250
+            }
+          }
+        },
+        {
+          "event": "trusted_cancel_handler",
+          "observed": {
+            "draft": {
+              "id": "draft_7ee2deaf31b24040878e88ff56cd0c69",
+              "kind": "transfer",
+              "state": "CANCELLED",
+              "version": 2,
+              "can_confirm": false
+            },
+            "review": {
+              "recipient_or_biller": "علي ضياء",
+              "amount_minor": 10000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 10250
+            }
+          }
+        },
+        {
+          "event": "confirm_cancelled",
+          "error_code": "DRAFT_CANCELLED",
+          "duration_ms": 0.23
+        }
+      ],
+      "assertions": [
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "chat_never_returns_completed_transaction",
+          "passed": true
+        },
+        {
+          "label": "chat_keeps_both_owners_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "issued_payment_review",
+          "passed": true
+        },
+        {
+          "label": "review_exact_recipient_or_biller",
+          "passed": true
+        },
+        {
+          "label": "review_exact_amount_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_currency",
+          "passed": true
+        },
+        {
+          "label": "review_exact_fee_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_total_debit_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_kind",
+          "passed": true
+        },
+        {
+          "label": "review_offers_separate_confirm",
+          "passed": true
+        },
+        {
+          "label": "review_cancelled",
+          "passed": true
+        },
+        {
+          "label": "confirm_cancelled_exact_error_code",
+          "passed": true
+        },
+        {
+          "label": "confirm_cancelled_keeps_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "final_exact_balances",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_transactions",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_successful_transactions",
+          "passed": true
+        },
+        {
+          "label": "expected_domain_rejections_observed",
+          "passed": true
+        },
+        {
+          "label": "seeded_history_rows_preserved",
+          "passed": true
+        }
+      ],
+      "observed_final": {
+        "balances": {
+          "demo_amina": 150000,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 0,
+        "new_successful_transactions": 0,
+        "new_transaction_ids": []
+      },
+      "duration_ms": 60.41
+    },
+    {
+      "id": "WF005",
+      "title_ar_iq": "تغيير المبلغ يحتاج مراجعة وتأكيد جديد",
+      "expected_final": {
+        "balances": {
+          "demo_amina": 124750,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 1,
+        "new_successful_transactions": 1
+      },
+      "passed": true,
+      "events": [
+        {
+          "event": "chat",
+          "message_ar_iq": "حول ١٠ آلاف لعلي ضياء",
+          "duration_ms": 6.62,
+          "observed": {
+            "draft": {
+              "id": "draft_3ddbaa8371fe4482a25429cbbef90fbc",
+              "kind": "transfer",
+              "state": "AWAITING_CONFIRMATION",
+              "version": 1,
+              "can_confirm": true
+            },
+            "review": {
+              "recipient_or_biller": "علي ضياء",
+              "amount_minor": 10000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 10250
+            }
+          }
+        },
+        {
+          "event": "chat",
+          "message_ar_iq": "غير المبلغ خلي ٢٥ ألف",
+          "duration_ms": 4.95,
+          "observed": {
+            "draft": {
+              "id": "draft_3ddbaa8371fe4482a25429cbbef90fbc",
+              "kind": "transfer",
+              "state": "AWAITING_CONFIRMATION",
+              "version": 2,
+              "can_confirm": true
+            },
+            "review": {
+              "recipient_or_biller": "علي ضياء",
+              "amount_minor": 25000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 25250
+            }
+          }
+        },
+        {
+          "event": "confirm_old_version",
+          "error_code": "STALE_CONFIRMATION",
+          "duration_ms": 0.4
+        },
+        {
+          "event": "trusted_confirm_handler",
+          "draft_id": "draft_3ddbaa8371fe4482a25429cbbef90fbc",
+          "duration_ms": 3.59,
+          "observed": {
+            "draft": {
+              "id": "draft_3ddbaa8371fe4482a25429cbbef90fbc",
+              "kind": "transfer",
+              "state": "SUCCEEDED",
+              "version": 2,
+              "can_confirm": false
+            },
+            "review": {
+              "recipient_or_biller": "علي ضياء",
+              "amount_minor": 25000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 25250
+            },
+            "transaction": {
+              "id": "txn_dad759fc0ce24ce9804b3a0cd14d9524",
+              "reference": "MOCK-A8B95A798D90",
+              "status": "SUCCEEDED",
+              "debit_minor": 25250,
+              "counterparty": "علي ضياء",
+              "currency": "IQD",
+              "duplicate": false
+            },
+            "has_receipt": true,
+            "available_minor": 124750
+          }
+        }
+      ],
+      "assertions": [
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "chat_never_returns_completed_transaction",
+          "passed": true
+        },
+        {
+          "label": "chat_keeps_both_owners_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "issued_payment_review",
+          "passed": true
+        },
+        {
+          "label": "review_exact_recipient_or_biller",
+          "passed": true
+        },
+        {
+          "label": "review_exact_amount_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_currency",
+          "passed": true
+        },
+        {
+          "label": "review_exact_fee_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_total_debit_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_kind",
+          "passed": true
+        },
+        {
+          "label": "review_offers_separate_confirm",
+          "passed": true
+        },
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "chat_never_returns_completed_transaction",
+          "passed": true
+        },
+        {
+          "label": "chat_keeps_both_owners_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "issued_payment_review",
+          "passed": true
+        },
+        {
+          "label": "review_exact_recipient_or_biller",
+          "passed": true
+        },
+        {
+          "label": "review_exact_amount_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_currency",
+          "passed": true
+        },
+        {
+          "label": "review_exact_fee_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_total_debit_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_kind",
+          "passed": true
+        },
+        {
+          "label": "review_offers_separate_confirm",
+          "passed": true
+        },
+        {
+          "label": "edited_review_retains_id",
+          "passed": true
+        },
+        {
+          "label": "edited_review_advances_version",
+          "passed": true
+        },
+        {
+          "label": "confirm_old_version_exact_error_code",
+          "passed": true
+        },
+        {
+          "label": "confirm_old_version_keeps_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "confirmed_transaction_succeeded",
+          "passed": true
+        },
+        {
+          "label": "confirmed_recipient_matches_review",
+          "passed": true
+        },
+        {
+          "label": "confirmed_debit_matches_review",
+          "passed": true
+        },
+        {
+          "label": "confirmed_currency_iqd",
+          "passed": true
+        },
+        {
+          "label": "receipt_identifies_original_transaction",
+          "passed": true
+        },
+        {
+          "label": "receipt_reference_matches_transaction",
+          "passed": true
+        },
+        {
+          "label": "receipt_debit_matches_review",
+          "passed": true
+        },
+        {
+          "label": "final_exact_balances",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_transactions",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_successful_transactions",
+          "passed": true
+        },
+        {
+          "label": "expected_domain_rejections_observed",
+          "passed": true
+        },
+        {
+          "label": "seeded_history_rows_preserved",
+          "passed": true
+        }
+      ],
+      "observed_final": {
+        "balances": {
+          "demo_amina": 124750,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 1,
+        "new_successful_transactions": 1,
+        "new_transaction_ids": [
+          "txn_dad759fc0ce24ce9804b3a0cd14d9524"
+        ]
+      },
+      "duration_ms": 58.46
+    },
+    {
+      "id": "WF006",
+      "title_ar_iq": "ضغط التأكيد مرتين يخصم مرة واحدة",
+      "expected_final": {
+        "balances": {
+          "demo_amina": 139750,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 1,
+        "new_successful_transactions": 1
+      },
+      "passed": true,
+      "events": [
+        {
+          "event": "chat",
+          "message_ar_iq": "حول ١٠ آلاف لعلي ضياء",
+          "duration_ms": 13.88,
+          "observed": {
+            "draft": {
+              "id": "draft_5a1c6a5a2227430fbcf65112f188117d",
+              "kind": "transfer",
+              "state": "AWAITING_CONFIRMATION",
+              "version": 1,
+              "can_confirm": true
+            },
+            "review": {
+              "recipient_or_biller": "علي ضياء",
+              "amount_minor": 10000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 10250
+            }
+          }
+        },
+        {
+          "event": "trusted_confirm_handler",
+          "draft_id": "draft_5a1c6a5a2227430fbcf65112f188117d",
+          "duration_ms": 3.72,
+          "observed": {
+            "draft": {
+              "id": "draft_5a1c6a5a2227430fbcf65112f188117d",
+              "kind": "transfer",
+              "state": "SUCCEEDED",
+              "version": 1,
+              "can_confirm": false
+            },
+            "review": {
+              "recipient_or_biller": "علي ضياء",
+              "amount_minor": 10000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 10250
+            },
+            "transaction": {
+              "id": "txn_ae9e89743c5042e1b255c6f02bbe7b78",
+              "reference": "MOCK-561EBE8B0446",
+              "status": "SUCCEEDED",
+              "debit_minor": 10250,
+              "counterparty": "علي ضياء",
+              "currency": "IQD",
+              "duplicate": false
+            },
+            "has_receipt": true,
+            "available_minor": 139750
+          }
+        },
+        {
+          "event": "trusted_confirm_handler",
+          "draft_id": "draft_5a1c6a5a2227430fbcf65112f188117d",
+          "duration_ms": 0.75,
+          "observed": {
+            "draft": {
+              "id": "draft_5a1c6a5a2227430fbcf65112f188117d",
+              "kind": "transfer",
+              "state": "SUCCEEDED",
+              "version": 1,
+              "can_confirm": false
+            },
+            "review": {
+              "recipient_or_biller": "علي ضياء",
+              "amount_minor": 10000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 10250
+            },
+            "transaction": {
+              "id": "txn_ae9e89743c5042e1b255c6f02bbe7b78",
+              "reference": "MOCK-561EBE8B0446",
+              "status": "SUCCEEDED",
+              "debit_minor": 10250,
+              "counterparty": "علي ضياء",
+              "currency": "IQD",
+              "duplicate": true
+            },
+            "has_receipt": true,
+            "available_minor": 139750
+          }
+        }
+      ],
+      "assertions": [
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "chat_never_returns_completed_transaction",
+          "passed": true
+        },
+        {
+          "label": "chat_keeps_both_owners_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "issued_payment_review",
+          "passed": true
+        },
+        {
+          "label": "review_exact_recipient_or_biller",
+          "passed": true
+        },
+        {
+          "label": "review_exact_amount_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_currency",
+          "passed": true
+        },
+        {
+          "label": "review_exact_fee_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_total_debit_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_kind",
+          "passed": true
+        },
+        {
+          "label": "review_offers_separate_confirm",
+          "passed": true
+        },
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "confirmed_transaction_succeeded",
+          "passed": true
+        },
+        {
+          "label": "confirmed_recipient_matches_review",
+          "passed": true
+        },
+        {
+          "label": "confirmed_debit_matches_review",
+          "passed": true
+        },
+        {
+          "label": "confirmed_currency_iqd",
+          "passed": true
+        },
+        {
+          "label": "receipt_identifies_original_transaction",
+          "passed": true
+        },
+        {
+          "label": "receipt_reference_matches_transaction",
+          "passed": true
+        },
+        {
+          "label": "receipt_debit_matches_review",
+          "passed": true
+        },
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "confirmed_transaction_succeeded",
+          "passed": true
+        },
+        {
+          "label": "confirmed_recipient_matches_review",
+          "passed": true
+        },
+        {
+          "label": "confirmed_debit_matches_review",
+          "passed": true
+        },
+        {
+          "label": "confirmed_currency_iqd",
+          "passed": true
+        },
+        {
+          "label": "receipt_identifies_original_transaction",
+          "passed": true
+        },
+        {
+          "label": "receipt_reference_matches_transaction",
+          "passed": true
+        },
+        {
+          "label": "receipt_debit_matches_review",
+          "passed": true
+        },
+        {
+          "label": "repeated_confirm_returns_same_transaction",
+          "passed": true
+        },
+        {
+          "label": "repeat_identified_as_duplicate",
+          "passed": true
+        },
+        {
+          "label": "final_exact_balances",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_transactions",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_successful_transactions",
+          "passed": true
+        },
+        {
+          "label": "expected_domain_rejections_observed",
+          "passed": true
+        },
+        {
+          "label": "seeded_history_rows_preserved",
+          "passed": true
+        }
+      ],
+      "observed_final": {
+        "balances": {
+          "demo_amina": 139750,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 1,
+        "new_successful_transactions": 1,
+        "new_transaction_ids": [
+          "txn_ae9e89743c5042e1b255c6f02bbe7b78"
+        ]
+      },
+      "duration_ms": 47.28
+    },
+    {
+      "id": "WF007",
+      "title_ar_iq": "انقطاع الرد واسترجاع نفس نتيجة التحويل",
+      "expected_final": {
+        "balances": {
+          "demo_amina": 129750,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 1,
+        "new_successful_transactions": 1
+      },
+      "passed": true,
+      "events": [
+        {
+          "event": "chat",
+          "message_ar_iq": "حول ٢٠ ألف لعلي محمد",
+          "duration_ms": 7.21,
+          "observed": {
+            "draft": {
+              "id": "draft_f90f1efc858c4b619842a081fee89a0d",
+              "kind": "transfer",
+              "state": "AWAITING_CONFIRMATION",
+              "version": 1,
+              "can_confirm": true
+            },
+            "review": {
+              "recipient_or_biller": "علي محمد",
+              "amount_minor": 20000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 20250
+            }
+          }
+        },
+        {
+          "event": "trusted_confirm_handler",
+          "draft_id": "draft_f90f1efc858c4b619842a081fee89a0d",
+          "duration_ms": 2.9,
+          "observed": {
+            "draft": {
+              "id": "draft_f90f1efc858c4b619842a081fee89a0d",
+              "kind": "transfer",
+              "state": "SUCCEEDED",
+              "version": 1,
+              "can_confirm": false
+            },
+            "review": {
+              "recipient_or_biller": "علي محمد",
+              "amount_minor": 20000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 20250
+            },
+            "transaction": {
+              "id": "txn_116ef776b683477496c1c54a11e670f0",
+              "reference": "MOCK-72DA5309FE45",
+              "status": "SUCCEEDED",
+              "debit_minor": 20250,
+              "counterparty": "علي محمد",
+              "currency": "IQD",
+              "duplicate": false
+            },
+            "has_receipt": true,
+            "available_minor": 129750
+          }
+        },
+        {
+          "event": "inject_unknown_after_durable_mock_result",
+          "transaction_id": "txn_116ef776b683477496c1c54a11e670f0"
+        },
+        {
+          "event": "trusted_status_handler",
+          "duration_ms": 3.13,
+          "observed": {
+            "draft": {
+              "id": "draft_f90f1efc858c4b619842a081fee89a0d",
+              "kind": "transfer",
+              "state": "SUCCEEDED",
+              "version": 1,
+              "can_confirm": false
+            },
+            "review": {
+              "recipient_or_biller": "علي محمد",
+              "amount_minor": 20000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 20250
+            },
+            "transaction": {
+              "id": "txn_116ef776b683477496c1c54a11e670f0",
+              "reference": "MOCK-72DA5309FE45",
+              "status": "SUCCEEDED",
+              "debit_minor": 20250,
+              "counterparty": "علي محمد",
+              "currency": "IQD",
+              "duplicate": false
+            },
+            "has_receipt": true
+          }
+        }
+      ],
+      "assertions": [
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "chat_never_returns_completed_transaction",
+          "passed": true
+        },
+        {
+          "label": "chat_keeps_both_owners_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "issued_payment_review",
+          "passed": true
+        },
+        {
+          "label": "review_exact_recipient_or_biller",
+          "passed": true
+        },
+        {
+          "label": "review_exact_amount_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_currency",
+          "passed": true
+        },
+        {
+          "label": "review_exact_fee_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_total_debit_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_kind",
+          "passed": true
+        },
+        {
+          "label": "review_offers_separate_confirm",
+          "passed": true
+        },
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "confirmed_transaction_succeeded",
+          "passed": true
+        },
+        {
+          "label": "confirmed_recipient_matches_review",
+          "passed": true
+        },
+        {
+          "label": "confirmed_debit_matches_review",
+          "passed": true
+        },
+        {
+          "label": "confirmed_currency_iqd",
+          "passed": true
+        },
+        {
+          "label": "receipt_identifies_original_transaction",
+          "passed": true
+        },
+        {
+          "label": "receipt_reference_matches_transaction",
+          "passed": true
+        },
+        {
+          "label": "receipt_debit_matches_review",
+          "passed": true
+        },
+        {
+          "label": "fault_fixture_really_became_unknown",
+          "passed": true
+        },
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "recovery_uses_original_transaction",
+          "passed": true
+        },
+        {
+          "label": "recovery_reads_durable_mock_result",
+          "passed": true
+        },
+        {
+          "label": "recovery_restores_original_receipt",
+          "passed": true
+        },
+        {
+          "label": "final_exact_balances",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_transactions",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_successful_transactions",
+          "passed": true
+        },
+        {
+          "label": "expected_domain_rejections_observed",
+          "passed": true
+        },
+        {
+          "label": "seeded_history_rows_preserved",
+          "passed": true
+        }
+      ],
+      "observed_final": {
+        "balances": {
+          "demo_amina": 129750,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 1,
+        "new_successful_transactions": 1,
+        "new_transaction_ids": [
+          "txn_116ef776b683477496c1c54a11e670f0"
+        ]
+      },
+      "duration_ms": 50.5
+    },
+    {
+      "id": "WF008",
+      "title_ar_iq": "الرصيد ما يكفي ويا الأجور",
+      "expected_final": {
+        "balances": {
+          "demo_amina": 150000,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 0,
+        "new_successful_transactions": 0
+      },
+      "passed": true,
+      "events": [
+        {
+          "event": "chat",
+          "message_ar_iq": "حول ١٥٠ ألف لعلي ضياء",
+          "duration_ms": 6.31,
+          "observed": {
+            "draft": {
+              "id": "draft_5fa43f53f36b4b33aa36ddc39b11d438",
+              "kind": "transfer",
+              "state": "AWAITING_CONFIRMATION",
+              "version": 1,
+              "can_confirm": true
+            },
+            "review": {
+              "recipient_or_biller": "علي ضياء",
+              "amount_minor": 150000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 150250
+            }
+          }
+        },
+        {
+          "event": "confirm_insufficient_balance",
+          "error_code": "INSUFFICIENT_BALANCE",
+          "duration_ms": 0.35
+        }
+      ],
+      "assertions": [
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "chat_never_returns_completed_transaction",
+          "passed": true
+        },
+        {
+          "label": "chat_keeps_both_owners_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "issued_payment_review",
+          "passed": true
+        },
+        {
+          "label": "review_exact_recipient_or_biller",
+          "passed": true
+        },
+        {
+          "label": "review_exact_amount_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_currency",
+          "passed": true
+        },
+        {
+          "label": "review_exact_fee_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_total_debit_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_kind",
+          "passed": true
+        },
+        {
+          "label": "review_offers_separate_confirm",
+          "passed": true
+        },
+        {
+          "label": "confirm_insufficient_balance_exact_error_code",
+          "passed": true
+        },
+        {
+          "label": "confirm_insufficient_balance_keeps_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "final_exact_balances",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_transactions",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_successful_transactions",
+          "passed": true
+        },
+        {
+          "label": "expected_domain_rejections_observed",
+          "passed": true
+        },
+        {
+          "label": "seeded_history_rows_preserved",
+          "passed": true
+        }
+      ],
+      "observed_final": {
+        "balances": {
+          "demo_amina": 150000,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 0,
+        "new_successful_transactions": 0,
+        "new_transaction_ids": []
+      },
+      "duration_ms": 46.69
+    },
+    {
+      "id": "WF009",
+      "title_ar_iq": "حساب حسن ما يؤكد مراجعة أمينة",
+      "expected_final": {
+        "balances": {
+          "demo_amina": 150000,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 0,
+        "new_successful_transactions": 0
+      },
+      "passed": true,
+      "events": [
+        {
+          "event": "chat",
+          "message_ar_iq": "حول ١٠ آلاف لعلي ضياء",
+          "duration_ms": 11.69,
+          "observed": {
+            "draft": {
+              "id": "draft_db48c10bdc1c4d8bad7373c34536bfa3",
+              "kind": "transfer",
+              "state": "AWAITING_CONFIRMATION",
+              "version": 1,
+              "can_confirm": true
+            },
+            "review": {
+              "recipient_or_biller": "علي ضياء",
+              "amount_minor": 10000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 10250
+            }
+          }
+        },
+        {
+          "event": "other_owner_confirm",
+          "error_code": "DRAFT_NOT_FOUND",
+          "duration_ms": 0.29
+        }
+      ],
+      "assertions": [
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "chat_never_returns_completed_transaction",
+          "passed": true
+        },
+        {
+          "label": "chat_keeps_both_owners_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "issued_payment_review",
+          "passed": true
+        },
+        {
+          "label": "review_exact_recipient_or_biller",
+          "passed": true
+        },
+        {
+          "label": "review_exact_amount_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_currency",
+          "passed": true
+        },
+        {
+          "label": "review_exact_fee_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_total_debit_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_kind",
+          "passed": true
+        },
+        {
+          "label": "review_offers_separate_confirm",
+          "passed": true
+        },
+        {
+          "label": "other_owner_confirm_exact_error_code",
+          "passed": true
+        },
+        {
+          "label": "other_owner_confirm_keeps_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "final_exact_balances",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_transactions",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_successful_transactions",
+          "passed": true
+        },
+        {
+          "label": "expected_domain_rejections_observed",
+          "passed": true
+        },
+        {
+          "label": "seeded_history_rows_preserved",
+          "passed": true
+        }
+      ],
+      "observed_final": {
+        "balances": {
+          "demo_amina": 150000,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 0,
+        "new_successful_transactions": 0,
+        "new_transaction_ids": []
+      },
+      "duration_ms": 54.44
+    },
+    {
+      "id": "WF010",
+      "title_ar_iq": "انتهاء صلاحية المراجعة يمنع الخصم",
+      "expected_final": {
+        "balances": {
+          "demo_amina": 150000,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 0,
+        "new_successful_transactions": 0
+      },
+      "passed": true,
+      "events": [
+        {
+          "event": "chat",
+          "message_ar_iq": "حول ١٠ آلاف لعلي ضياء",
+          "duration_ms": 5.3,
+          "observed": {
+            "draft": {
+              "id": "draft_6236dab4cca34d0bb543d14f8e31af28",
+              "kind": "transfer",
+              "state": "AWAITING_CONFIRMATION",
+              "version": 1,
+              "can_confirm": true
+            },
+            "review": {
+              "recipient_or_biller": "علي ضياء",
+              "amount_minor": 10000,
+              "currency": "IQD",
+              "fee_minor": 250,
+              "total_debit_minor": 10250
+            }
+          }
+        },
+        {
+          "event": "advance_review_expiry_fixture",
+          "draft_id": "draft_6236dab4cca34d0bb543d14f8e31af28"
+        },
+        {
+          "event": "confirm_expired",
+          "error_code": "DRAFT_EXPIRED",
+          "duration_ms": 1.5
+        }
+      ],
+      "assertions": [
+        {
+          "label": "no_confirmation_token_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "no_session_or_confirmation_credentials_in_public_response",
+          "passed": true
+        },
+        {
+          "label": "chat_never_returns_completed_transaction",
+          "passed": true
+        },
+        {
+          "label": "chat_keeps_both_owners_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "issued_payment_review",
+          "passed": true
+        },
+        {
+          "label": "review_exact_recipient_or_biller",
+          "passed": true
+        },
+        {
+          "label": "review_exact_amount_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_currency",
+          "passed": true
+        },
+        {
+          "label": "review_exact_fee_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_total_debit_minor",
+          "passed": true
+        },
+        {
+          "label": "review_exact_kind",
+          "passed": true
+        },
+        {
+          "label": "review_offers_separate_confirm",
+          "passed": true
+        },
+        {
+          "label": "confirm_expired_exact_error_code",
+          "passed": true
+        },
+        {
+          "label": "confirm_expired_keeps_ledger_unchanged",
+          "passed": true
+        },
+        {
+          "label": "status_shows_expired_review",
+          "passed": true
+        },
+        {
+          "label": "final_exact_balances",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_transactions",
+          "passed": true
+        },
+        {
+          "label": "final_exact_new_successful_transactions",
+          "passed": true
+        },
+        {
+          "label": "expected_domain_rejections_observed",
+          "passed": true
+        },
+        {
+          "label": "seeded_history_rows_preserved",
+          "passed": true
+        }
+      ],
+      "observed_final": {
+        "balances": {
+          "demo_amina": 150000,
+          "demo_hassan": 87500
+        },
+        "new_transactions": 0,
+        "new_successful_transactions": 0,
+        "new_transaction_ids": []
+      },
+      "duration_ms": 38.18
+    }
+  ]
+}

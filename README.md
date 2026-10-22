@@ -81,6 +81,8 @@ The [new test and prompt guide](docs/IRAQI_TEST_HARNESS.md) adds **200 runnable 
 
 The full local automated suite passed **102 tests**. The new Iraqi cases passed **187/200 cases and 211/224 turns**, revealing **13 failures, including six incorrect payment reviews**, with zero committed ledger mutations during chat. Negated amounts, bill scope and requested wallet provider need fixes before payment readiness can be claimed. See the [failure backlog](docs/IRAQI_TEST_HARNESS.md#first-findings-and-required-fixes); passing the older 74 cases does not erase these misses. The 60 richer scenarios remain specifications requiring execution/review, and no set is native-human-reviewed or held out.
 
+The [22 October evidence summary](docs/evaluation-results/20261022_harness_summary.md) links the complete JSON/Markdown reports from clean implementation commit `6fe565e`, including **10/10 mock workflows with 270 assertions** and the retained 74/74 baseline.
+
 ```bash
 python -m evaluation.run --mode offline --cases evaluation/iraqi_v1/cases.jsonl
 ```

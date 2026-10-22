@@ -1,11 +1,20 @@
 # Evaluation: what the numbers do and do not establish
 
-The latest [clean-commit offline report](evaluation-results/20261021_offline_final.md)
-records 74/74 cases and 80/80 turns on published implementation commit `157c46a5`.
-It remains development regression evidence with no real-model calls or human
-review. The earlier development snapshot below is retained for provenance.
+The **22 October Iraqi-Arabic expansion** is described in
+[IRAQI_TEST_HARNESS.md](IRAQI_TEST_HARNESS.md): 200 additional runnable development
+cases, 60 scenario specifications and 10 mock workflow scenarios. Its first local
+run passed **187/200 cases and 211/224 turns**, with 13 failures including six
+incorrect payment reviews and zero committed ledger changes. These are offline
+development findings, not live-model or held-out accuracy. The latest evaluator
+also checks all-owner provider results and saved plans, exact review fields,
+strict assertion schemas and conservative reply-quality flags.
 
-## Current development set
+The previous [clean-commit offline report](evaluation-results/20261021_offline_final.md)
+records 74/74 cases and 80/80 turns on published implementation commit `157c46a5`.
+It remains regression evidence for that smaller development set. The earlier
+development snapshot below is retained for provenance.
+
+## Original development set
 
 `evaluation/cases.jsonl` contains **74 synthetic cases and 80 conversation turns**.
 They were authored by the ChatGPT coding assistant on 21 October 2026 from the

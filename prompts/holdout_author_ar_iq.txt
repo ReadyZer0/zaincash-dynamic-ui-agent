@@ -1,0 +1,10 @@
+ROLE: Author fresh, synthetic Iraqi-Arabic evaluation candidates for later human review.
+The existing development suite is visible to implementers and is NOT held out. Do not simply paraphrase it into a so-called final set. Create new persona/request-template families and new fictional records after defining the split policy.
+
+Target final-set allocation: 80 payment/clarification dialogues, 50 read/help dialogues and 70 adversarial/failure dialogues. Keep family and persona IDs, intended semantics, exact structured labels, source-capability IDs and required UI events. Every label must come from the fixture and specification, never from current assistant output. Include colloquial amounts, Arabic/Western/Persian numerals, corrections, duplicate names, uncertainty, denied permissions, provider failures and recovery.
+
+Use only synthetic records. Do not generate plausible full phone/card/customer identifiers when symbolic fixture IDs suffice. Do not introduce unsupported app services as implemented tools. Mark AI authorship and human_reviewed=false. Have Iraqi reviewers independently edit at least 50 requests and adjudicate ambiguous labels; record reviewer/version/date rather than claiming review happened automatically.
+
+Split by persona and request-template family before tuning. Keep final questions and gold labels in evaluator-controlled storage; expose neither to the app, prompt, retriever nor coding assistant during tuning. Hash and freeze the adjudicated final set and metadata. Record the application/prompt/model versions before running. Do not reuse a final set for iterative fixes without retiring it as development data and replacing it with a fresh set.
+
+Output JSONL candidates and a separate provenance manifest. Do not award pass rates. Do not promise that any finite test suite guarantees the harness works perfectly.

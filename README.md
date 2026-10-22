@@ -40,6 +40,12 @@ Follow [LLM_SETUP.md](docs/LLM_SETUP.md) for Windows/Linux commands with a hidde
 
 Use the actual endpoint/model from the provider console. Alibaba Qwen's compatible API is a documented candidate; no specific cloud model quality or compatibility result is claimed yet. Local compatible loopback model servers are supported. The app distinguishes configuration present from a successful model request. A failed call never silently becomes an offline result. `.env` files are not loaded automatically.
 
+A Gemini trial preset is now available through `scripts/ready.py` with a hidden
+key prompt and a five-outbound-request process cap. It remains **off** unless
+`--mode llm --provider gemini --allow-network` is supplied. See
+[Gemini setup and key rotation](docs/LLM_SETUP.md#gemini-trial-preset-prepared-22-october-2026).
+No Gemini request or model-quality result is claimed from configuring it.
+
 ### Android APK
 
 The native **READY Demo** client loads the same mobile interface from this backend. It contains neither Python nor an LLM key. The backend computer must remain available while testing.
@@ -84,7 +90,7 @@ On 21 October 2026, the offline development run passed **74/74 cases and 80/80 t
 
 See [the final measured report](docs/evaluation-results/20261021_offline_final.md) and [evaluation protocol](docs/EVALUATION.md). Live evaluation requires explicit network opt-in and can consume quota. No live provider call, real-model latency/cost, or physical Android device test is claimed in this delivery.
 
-The 22 October continuation from draft [PR #1](https://github.com/ReadyZer0/zaincash-dynamic-ui-agent/pull/1) is tracked in [its checklist](docs/CONTINUATION_CHECKLIST.md). Its Windows suite passed **104/104**, and its clean-source offline **development** run passed **74/74 cases, 80/80 turns**; see [current status](docs/IMPLEMENTATION_STATUS.md) and the [dated report](docs/evaluation-results/20261022_windows_offline.md). The clean-source debug APK was rebuilt and structurally verified, but has not been run on a phone. The 21 October report above retains its original revision. The [human-review protocol](docs/HUMAN_REVIEW.md) prepares a separate final dataset without representing AI-authored development examples as native-speaker evidence.
+The 22 October continuation from draft [PR #1](https://github.com/ReadyZer0/zaincash-dynamic-ui-agent/pull/1) is tracked in [its checklist](docs/CONTINUATION_CHECKLIST.md). Its clean-source Windows suite passed **104/104**, and its clean-source offline **development** run passed **74/74 cases, 80/80 turns**; see [current status](docs/IMPLEMENTATION_STATUS.md) and the [dated report](docs/evaluation-results/20261022_windows_offline.md). After the later Gemini preparation, the expanded suite passed **110/110** and the offline development run remained **74/74 cases, 80/80 turns**; no Gemini cloud call was made. The clean-source debug APK was rebuilt and structurally verified, but has not been run on a phone. The 21 October report above retains its original revision. The [human-review protocol](docs/HUMAN_REVIEW.md) prepares a separate final dataset without representing AI-authored development examples as native-speaker evidence.
 
 ## Focus and roadmap
 

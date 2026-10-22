@@ -40,6 +40,21 @@ planned 200-dialogue, 50 Iraqi-speaker-edit and 5–8 usability-session targets.
 Provider selection, live-model requests, held-out evaluation and device
 inspection remain future gates. No hackathon form was submitted.
 
+### Gemini preparation — later on 22 October 2026
+
+The user selected Gemini for the first bounded trial. READY now has a Gemini
+launcher preset, an explicit five-outbound-request **per-process** cap,
+free-tier verification instructions, and transient thought-signature support
+for multi-step tool calls. The expanded Windows suite passed **110/110** and
+the offline development evaluator still passed **74/74 cases, 80/80 turns**
+after this change. These are local scripted/transport checks only. The key
+shared in chat was **not copied into source, environment,
+reports, APK or Git** and was not used for a network call. A rotated key must
+be entered through the hidden local prompt. No live Gemini quality, cost,
+latency or compatibility result exists yet; confirm the project's free-tier
+status before even a bounded live smoke. The earlier provider-selection
+statement above describes the state before this later preparation.
+
 ## Published implementation — 21 October 2026
 
 The full plan was recorded in `docs/BUILD_PLAN.md` and committed before this

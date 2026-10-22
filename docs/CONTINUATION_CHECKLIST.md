@@ -17,7 +17,7 @@ Starting point: PR #1, open/draft/unmerged, head `4eae03bf40a1f9bc4c3c175dfc118a
 
 ## External inputs / gates
 
-- Provider selection remains deferred by the user. Exact tool-capable model, endpoint, secure key entry and bounded quota approval are needed before live smoke evaluation; no live result may be fabricated.
+- Gemini is now selected for a bounded first trial. The preset supplies the official compatible endpoint/model and caps outbound attempts at five per process. The pasted key must be rotated; its replacement must be entered through the hidden local prompt after confirming the project is free tier. No live result may be fabricated.
 - Android installation/runtime needs an available authorized phone/emulator. Never silently uninstall an existing differently signed app.
 - At least 50 Iraqi-speaker edits and 5–8 task-based sessions need actual participants. New final 200 dialogues must be reviewed and frozen separately from development examples.
 - No hackathon-form submission, organizer message, real payment, public backend deployment or external notification is part of this continuation.

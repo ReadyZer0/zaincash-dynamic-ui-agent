@@ -17,7 +17,7 @@ REPO = Path(__file__).resolve().parents[1]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
-from llm_agent import LLMConfig
+from llm_agent import GEMINI_BASE_URL, GEMINI_FLASH_MODEL, LLMConfig
 
 
 def prerequisites() -> list[tuple[str, bool, str]]:
@@ -50,10 +50,25 @@ def hidden_key() -> str:
 
 
 @contextmanager
-def runtime_environment(mode: str, allow_network: bool):
-    names = ("READY_AGENT_MODE", "READY_LLM_API_KEY")
+def runtime_environment(mode: str, allow_network: bool, provider: str = "custom"):
+    names = ("READY_AGENT_MODE", "READY_LLM_API_KEY", "READY_LLM_BASE_URL", "READY_LLM_MODEL",
+             "READY_LLM_REQUEST_CAP", "READY_LLM_ENABLE_THINKING")
     original = {name: os.environ.get(name) for name in names}
     try:
+        if provider == "gemini":
+            if mode != "llm":
+                raise ValueError("The Gemini preset requires --mode llm.")
+            os.environ["READY_LLM_BASE_URL"] = GEMINI_BASE_URL
+            os.environ["READY_LLM_MODEL"] = GEMINI_FLASH_MODEL
+            os.environ["READY_LLM_REQUEST_CAP"] = "5"
+            # This vendor-specific flag may be left over from a different
+            # compatible provider and is not part of the Gemini preset.
+            os.environ.pop("READY_LLM_ENABLE_THINKING", None)
+            # Always enter a fresh key privately; do not reuse an inherited or
+            # accidentally exposed credential from this terminal.
+            os.environ.pop("READY_LLM_API_KEY", None)
+        elif provider != "custom":
+            raise ValueError("Unsupported provider preset.")
         if mode == "llm" and not allow_network:
             raise ValueError("Live mode requires --allow-network and an approved provider/quota; it sends synthetic requests to that provider.")
         os.environ["READY_AGENT_MODE"] = mode
@@ -82,6 +97,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("check", "serve", "smoke"))
     parser.add_argument("--mode", choices=("offline", "llm"), default="offline")
+    parser.add_argument("--provider", choices=("custom", "gemini"), default="custom")
     parser.add_argument("--allow-network", action="store_true")
     parser.add_argument("--limit", type=int, default=5, help="Smoke cases, 1–5; use the full evaluator separately for larger approved runs")
     args = parser.parse_args(argv)
@@ -96,8 +112,8 @@ def main(argv: list[str] | None = None) -> int:
         print("No server started, no model call made, no device changed. Android prerequisites: see docs/ANDROID.md.")
         return 0
     try:
-        with runtime_environment(args.mode, args.allow_network):
-            print("OFFLINE_DEMO: no model calls." if args.mode == "offline" else "LIVE_MODEL configured: compatibility still requires a successful request. Provider usage is bounded per turn, not free by assumption.")
+        with runtime_environment(args.mode, args.allow_network, args.provider):
+            print("OFFLINE_DEMO: no model calls." if args.mode == "offline" else "LIVE_MODEL configured: compatibility still requires a successful request. Provider usage is bounded by the configured limits, not free by assumption.")
             if args.command == "serve":
                 print("Foreground only. Stop with Ctrl+C. USB setup: adb reverse tcp:8765 tcp:8765")
                 runpy.run_path(str(REPO / "server.py"), run_name="__main__")

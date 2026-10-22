@@ -13,7 +13,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from llm_agent import (
     AgentError, AgentRunner, AgentToolError, LLMConfig, OpenAICompatibleClient,
-    MAX_HISTORY_CHARS, tool_definitions,
+    GEMINI_BASE_URL, GEMINI_FLASH_MODEL, MAX_HISTORY_CHARS, tool_definitions,
 )
 
 
@@ -87,6 +87,28 @@ class LlmAgentTests(unittest.TestCase):
         self.assertEqual([item["id"] for item in result.clarification["choices"]],
                          ["contact_ali_diaa", "contact_ali_mohammed"])
         self.assertEqual(len(self.executions), 1)
+
+    def test_gemini_signature_stays_only_in_transient_model_transcript(self) -> None:
+        first = call("VIEW_BALANCE", {}, "balance_call")
+        first["extra_content"] = {"google": {"thought_signature": "opaque-test-signature"}}
+        client = ScriptedClient(tool_message(first), {"role": "assistant", "content": "رصيدك ظاهر بالبطاقة."})
+        config = LLMConfig(mode="llm", base_url=GEMINI_BASE_URL,
+                           model=GEMINI_FLASH_MODEL, api_key="fixture-secret-key")
+        result = AgentRunner(config, client).run("شكد رصيدي؟", [], self.execute)
+        echoed = client.requests[1]["messages"][2]["tool_calls"][0]
+        self.assertEqual(echoed["extra_content"]["google"]["thought_signature"], "opaque-test-signature")
+        self.assertNotIn("opaque-test-signature", json.dumps(result.history))
+        self.assertNotIn("opaque-test-signature", json.dumps(result.trace))
+        self.assertNotIn("opaque-test-signature", json.dumps(result.public_results))
+
+    def test_gemini_missing_signature_rejects_before_tool_execution(self) -> None:
+        config = LLMConfig(mode="llm", base_url=GEMINI_BASE_URL,
+                           model=GEMINI_FLASH_MODEL, api_key="fixture-secret-key")
+        client = ScriptedClient(tool_message(call("VIEW_BALANCE", {})))
+        with self.assertRaises(AgentError) as raised:
+            AgentRunner(config, client).run("شكد رصيدي؟", [], self.execute)
+        self.assertEqual(raised.exception.code, "MODEL_INVALID_RESPONSE")
+        self.assertEqual(self.executions, [])
 
     def test_ask_without_lookup_cannot_invent_contact_choices(self) -> None:
         client = ScriptedClient(tool_message(call("ASK_USER", {"field": "recipient", "question": "لمن؟"})))
@@ -360,7 +382,8 @@ class TransportTests(unittest.TestCase):
         thread.start()
         try:
             config = LLMConfig(mode="llm", base_url=f"http://127.0.0.1:{server.server_port}/v1",
-                               model="fixture", api_key="transport-fixture-key", enable_thinking=False)
+                               model="fixture", api_key="transport-fixture-key", enable_thinking=False,
+                               request_cap=2)
             client = OpenAICompatibleClient(config)
             self.assertEqual(client.complete([{"role": "user", "content": "hello"}], tool_definitions(), 2)["content"], "hello")
             self.assertEqual(captured[0]["path"], "/v1/chat/completions")
@@ -370,6 +393,10 @@ class TransportTests(unittest.TestCase):
             with self.assertRaises(AgentError) as raised:
                 client.complete([{"role": "user", "content": "again"}], tool_definitions(), 2)
             self.assertEqual(raised.exception.code, "MODEL_HTTP_ERROR")
+            self.assertEqual(len(captured), 2)
+            with self.assertRaises(AgentError) as exhausted:
+                OpenAICompatibleClient(config).complete([{"role": "user", "content": "third"}], tool_definitions(), 2)
+            self.assertEqual(exhausted.exception.code, "MODEL_REQUEST_CAP")
             self.assertEqual(len(captured), 2)
         finally:
             server.shutdown()

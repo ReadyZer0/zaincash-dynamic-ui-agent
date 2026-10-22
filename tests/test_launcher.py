@@ -11,9 +11,34 @@ from contextlib import redirect_stdout
 from unittest.mock import patch
 
 from scripts.ready import hidden_key, main, runtime_environment
+from llm_agent import GEMINI_BASE_URL, GEMINI_FLASH_MODEL
 
 
 class LauncherTests(unittest.TestCase):
+    def test_gemini_preset_uses_five_request_cap_and_fresh_hidden_key(self):
+        inherited = {"READY_LLM_API_KEY": "old-exposed-key", "READY_LLM_BASE_URL": "https://old.example/v1",
+                     "READY_LLM_ENABLE_THINKING": "true"}
+        with patch.dict(os.environ, inherited, clear=True), patch("scripts.ready.hidden_key", return_value="new-test-only-key"):
+            with runtime_environment("llm", True, "gemini"):
+                self.assertEqual(os.environ["READY_LLM_BASE_URL"], GEMINI_BASE_URL)
+                self.assertEqual(os.environ["READY_LLM_MODEL"], GEMINI_FLASH_MODEL)
+                self.assertEqual(os.environ["READY_LLM_REQUEST_CAP"], "5")
+                self.assertEqual(os.environ["READY_LLM_API_KEY"], "new-test-only-key")
+                self.assertNotIn("READY_LLM_ENABLE_THINKING", os.environ)
+            self.assertEqual(os.environ["READY_LLM_API_KEY"], "old-exposed-key")
+            self.assertEqual(os.environ["READY_LLM_BASE_URL"], "https://old.example/v1")
+            self.assertEqual(os.environ["READY_LLM_ENABLE_THINKING"], "true")
+            self.assertNotIn("READY_LLM_REQUEST_CAP", os.environ)
+
+    def test_gemini_preset_requires_explicit_mode_and_network_opt_in(self):
+        with patch("scripts.ready.hidden_key", side_effect=AssertionError("Do not prompt")):
+            with self.assertRaisesRegex(ValueError, "--mode llm"):
+                with runtime_environment("offline", False, "gemini"):
+                    self.fail("Preset accepted offline mode")
+            with self.assertRaisesRegex(ValueError, "allow-network"):
+                with runtime_environment("llm", False, "gemini"):
+                    self.fail("Preset accepted network without opt-in")
+
     def test_offline_overrides_inherited_live_mode_and_restores_environment(self):
         with (
             patch.dict(os.environ, {"READY_AGENT_MODE": "llm", "READY_LLM_API_KEY": "test-only-secret"}),

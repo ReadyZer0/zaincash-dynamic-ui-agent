@@ -13,6 +13,44 @@ until an authorized key and selected model are used.
 
 ## Choose the endpoint and model
 
+### Gemini trial preset (prepared 22 October 2026)
+
+READY's Gemini preset uses Google's [OpenAI-compatible Chat Completions endpoint](https://ai.google.dev/gemini-api/docs/openai/)
+at `https://generativelanguage.googleapis.com/v1beta/openai` with the
+tool-capable `gemini-3.8-flash` model. Google's [function-calling example](https://ai.google.dev/gemini-api/docs/openai/)
+uses this model and endpoint. The adapter returns Gemini's opaque tool-call
+thought signature only within the transient provider conversation, as required
+for multi-step calls; it never enters wallet tools, UI traces or saved chat.
+This is a compatibility implementation, **not a successful live-model test**.
+
+After confirming that the key belongs to a **free-tier** project in Google AI
+Studio, rotate any credential shared in chat and enter the replacement only
+through the hidden local prompt. Do not place it in a file, command argument,
+repository, screenshot, mobile chat or message to Codex. Run **one** bounded
+synthetic smoke process from this checkout:
+
+```powershell
+py -3 scripts/ready.py smoke --mode llm --provider gemini --allow-network --limit 1
+```
+
+The preset requires explicit live mode and network opt-in. It has a hard cap of
+**five outbound provider attempts per process**, counting failures; one case
+can require multiple attempts. The cap resets if the process restarts, so it is
+not an account-level spending control. Do not repeat the command or start a
+live server under a five-request approval without reviewing the prior usage.
+The app remains offline by default. Google's [pricing page](https://ai.google.dev/gemini-api/docs/pricing)
+lists free-tier access for this model, but a request cap cannot prove which
+billing tier your specific key uses. Use synthetic data only: Google states
+free-tier content may be used to improve its products. No real wallet record,
+payment credential or customer data is suitable for this trial.
+
+If the smoke result is satisfactory and a separate running-session budget is
+approved, `py -3 scripts/ready.py serve --mode llm --provider gemini --allow-network`
+starts the app with another hidden key prompt. The server still cannot let the
+model confirm or commit a payment; the final Confirm remains server-owned.
+
+### Other compatible providers
+
 Obtain the exact base URL, model ID and credential from your provider's console.
 Choose a model that supports Chat Completions **function calling**. An ordinary
 text-only completion endpoint is insufficient.

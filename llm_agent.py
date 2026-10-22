@@ -13,6 +13,7 @@ import json
 import os
 import re
 import socket
+import threading
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -86,6 +87,22 @@ def _is_loopback(host: str | None) -> bool:
         return False
 
 
+@dataclass
+class ProviderRequestBudget:
+    """Shared per-config, per-process cap; failures consume an attempt too."""
+
+    limit: int
+    used: int = 0
+    lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+
+    def reserve(self) -> bool:
+        with self.lock:
+            if self.used >= self.limit:
+                return False
+            self.used += 1
+            return True
+
+
 @dataclass(frozen=True)
 class LLMConfig:
     mode: str = "offline"
@@ -94,17 +111,28 @@ class LLMConfig:
     api_key: str = field(default="", repr=False)
     timeout_seconds: float = 20.0
     enable_thinking: bool | None = None
+    request_cap: int = 0
+    _request_budget: ProviderRequestBudget | None = field(default=None, init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        if self.request_cap > 0:
+            object.__setattr__(self, "_request_budget", ProviderRequestBudget(self.request_cap))
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> "LLMConfig":
         values = os.environ if environ is None else environ
         thinking = values.get("READY_LLM_ENABLE_THINKING", "").strip().lower()
+        cap_text = values.get("READY_LLM_REQUEST_CAP", "").strip()
+        cap = int(cap_text) if re.fullmatch(r"[0-9]{1,3}", cap_text) else (-1 if cap_text else 0)
+        if cap_text and cap == 0:
+            cap = -1
         return cls(
             mode=values.get("READY_AGENT_MODE", "offline").strip().lower(),
             base_url=values.get("READY_LLM_BASE_URL", "").strip().rstrip("/"),
             model=values.get("READY_LLM_MODEL", "").strip(),
             api_key=values.get("READY_LLM_API_KEY", "").strip(),
             enable_thinking=(thinking == "true") if thinking in {"true", "false"} else None,
+            request_cap=cap,
         )
 
     def configuration_error(self) -> str | None:
@@ -143,6 +171,8 @@ class LLMConfig:
             return "The configured API credential is invalid."
         if not 1 <= self.timeout_seconds <= 30:
             return "The provider timeout must be between 1 and 30 seconds."
+        if not 0 <= self.request_cap <= 100:
+            return "READY_LLM_REQUEST_CAP must be an integer from 1 to 100, or unset."
         return None
 
     def public_status(self) -> dict[str, Any]:
@@ -208,6 +238,8 @@ class OpenAICompatibleClient:
             "max_tokens": 1_024,
             "stream": False,
         }
+        if self.config.base_url.rstrip("/") == GEMINI_BASE_URL and self.config.model == GEMINI_FLASH_MODEL:
+            payload["reasoning_effort"] = "low"
         if self.config.enable_thinking is not None:
             payload["enable_thinking"] = self.config.enable_thinking
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
@@ -218,6 +250,8 @@ class OpenAICompatibleClient:
             data=json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8"),
             headers=headers, method="POST",
         )
+        if self.config._request_budget and not self.config._request_budget.reserve():
+            raise AgentError("MODEL_REQUEST_CAP", "The approved provider request limit was reached. No payment was executed.")
         try:
             with self._opener.open(request, timeout=timeout) as response:
                 raw = response.read(MAX_PROVIDER_BYTES + 1)
@@ -425,6 +459,9 @@ _DESCRIPTIONS = {
     "PREPARE_SUPPORT_REQUEST": "Draft an owner-scoped support packet for a known transaction and issue. Sends nothing and does not create a real support ticket.",
 }
 
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
+GEMINI_FLASH_MODEL = "gemini-3.8-flash"
+
 
 def tool_definitions() -> list[dict[str, Any]]:
     definitions: list[dict[str, Any]] = []
@@ -519,6 +556,34 @@ class AgentRunner:
             raise AgentError("MODEL_MULTIPLE_ACTIONS", "The model requested multiple actions with a review. Ask for one payment at a time.")
         return validated
 
+    def _model_history_calls(self, response: dict[str, Any], validated: list[tuple[str, str, dict[str, Any]]]) -> list[dict[str, Any]]:
+        """Echo only validated calls plus Gemini's opaque in-turn signature.
+
+        The signature belongs only in the transient provider transcript. It is
+        never passed to a tool, UI trace, persisted chat history or wallet API.
+        """
+        history_calls: list[dict[str, Any]] = []
+        for original, (identifier, name, _arguments) in zip(response["tool_calls"], validated):
+            echoed: dict[str, Any] = {"id": identifier, "type": "function", "function": {
+                "name": name, "arguments": original["function"]["arguments"]
+            }}
+            extra = original.get("extra_content")
+            google = extra.get("google") if isinstance(extra, dict) else None
+            signature = google.get("thought_signature") if isinstance(google, dict) else None
+            if signature is not None:
+                if not isinstance(signature, str) or not 0 < len(signature) <= 16_384:
+                    raise AgentError("MODEL_INVALID_RESPONSE", "The provider returned invalid tool metadata. No payment was executed.")
+                echoed["extra_content"] = {"google": {"thought_signature": signature}}
+            history_calls.append(echoed)
+        if (
+            self.config.base_url.rstrip("/") == GEMINI_BASE_URL
+            and self.config.model.startswith("gemini-3")
+            and history_calls
+            and "extra_content" not in history_calls[0]
+        ):
+            raise AgentError("MODEL_INVALID_RESPONSE", "Gemini omitted required in-turn tool metadata. No payment was executed.")
+        return history_calls
+
     def run(self, message: str, history: Any,
             execute_tool: Callable[[str, dict[str, Any]], dict[str, Any]]) -> AgentResult:
         error = self.config.configuration_error()
@@ -583,10 +648,11 @@ class AgentRunner:
             if used_calls + len(calls) > MAX_TOOL_CALLS:
                 raise AgentError("MODEL_BUDGET_EXCEEDED", "The assistant reached its tool limit. No payment was executed.")
             used_calls += len(calls)
-            messages.append({"role": "assistant", "content": None,
-                             "tool_calls": [{"id": identifier, "type": "function", "function": {
-                                 "name": name, "arguments": json.dumps(arguments, ensure_ascii=False)
-                             }} for identifier, name, arguments in calls]})
+            assistant_content = response.get("content")
+            if assistant_content is not None and not isinstance(assistant_content, str):
+                raise AgentError("MODEL_INVALID_RESPONSE", "The model returned invalid text with its tool call.")
+            messages.append({"role": "assistant", "content": assistant_content,
+                             "tool_calls": self._model_history_calls(response, calls)})
             for identifier, name, arguments in calls:
                 call_start = time.monotonic()
                 if name == "ASK_USER":

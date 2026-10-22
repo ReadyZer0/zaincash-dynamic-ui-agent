@@ -11,29 +11,34 @@ against scripted responses and a loopback fake HTTP provider. No actual cloud
 model, dialect accuracy, inference cost or cloud latency is claimed as tested
 until an authorized key and selected model are used.
 
-## Choose the endpoint and model
+## Initial provider: Gemini Flash
 
-Obtain the exact base URL, model ID and credential from your provider's console.
-Choose a model that supports Chat Completions **function calling**. An ordinary
-text-only completion endpoint is insufficient.
-
-For Alibaba Cloud Model Studio, the current official API documentation lists
-workspace-specific regional domains. A Singapore example is:
+Gemini Flash is the project's initial planned model provider. Google's official
+OpenAI-compatible Chat Completions endpoint is:
 
 ```text
-https://YOUR_WORKSPACE_ID.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+https://generativelanguage.googleapis.com/v1beta/openai
 ```
 
-This is a template, not a working account. Use the endpoint for your own
-workspace and region. The provider documents the older DashScope domains as
-still functional; check which endpoint and models your account enables. READY
-appends `/chat/completions` to the configured base URL.
+Google's documentation checked on **22 October 2026** uses
+`gemini-3.8-flash`. Use the exact Flash model enabled in your own AI Studio
+project if that example is unavailable; model IDs, free-tier eligibility and
+quotas can change. READY appends `/chat/completions` to the base URL. A model
+must support function calling; text-only completion is insufficient.
 
-Primary references, checked 21 October 2026:
+The adapter preserves validated `extra_content.google.thought_signature`
+metadata on assistant tool calls within the current turn. Scripted tests check
+that the original signature reaches the next provider request and is absent
+from public output. This is protocol evidence, not proof that a real Gemini
+request or Iraqi-Arabic task has succeeded. Conversation history does not retain
+a full cross-turn provider transcript; test multi-turn behavior with the exact
+chosen model.
 
-- [Alibaba OpenAI-compatible Chat API](https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions)
-- [Alibaba function calling](https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen-function-calling)
-- [Alibaba API-key setup](https://www.alibabacloud.com/help/en/model-studio/get-api-key)
+Primary references, checked 22 October 2026:
+
+- [Google OpenAI compatibility](https://ai.google.dev/gemini-api/docs/openai)
+- [Google thought signatures](https://ai.google.dev/gemini-api/docs/generate-content/thought-signatures)
+- [Gemini API keys](https://ai.google.dev/gemini-api/docs/api-key)
 
 Do not paste your API key into ChatGPT, a repository file, the mobile chat, a
 screenshot or the APK. The commands below ask for the key through a hidden
@@ -42,12 +47,13 @@ terminal prompt and keep it in the running backend process environment.
 ## Start on Windows PowerShell
 
 Run each line in the repository folder, in the same PowerShell window. Replace
-the endpoint and model placeholders with the values from your provider.
+the model example if your AI Studio project enables a different Flash model.
 
 ```powershell
 $env:READY_AGENT_MODE="llm"
-$env:READY_LLM_BASE_URL="https://YOUR_WORKSPACE_ID.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
-$env:READY_LLM_MODEL="YOUR_ENABLED_TOOL_CAPABLE_MODEL"
+$env:READY_LLM_BASE_URL="https://generativelanguage.googleapis.com/v1beta/openai"
+$env:READY_LLM_MODEL="gemini-3.8-flash"
+Remove-Item Env:READY_LLM_ENABLE_THINKING -ErrorAction SilentlyContinue
 py -3 -c "import getpass,os,runpy; os.environ['READY_LLM_API_KEY']=getpass.getpass('Backend model API key: '); runpy.run_path('server.py',run_name='__main__')"
 ```
 
@@ -59,8 +65,9 @@ Ctrl+C; restarting it requires entering the credential again.
 
 ```bash
 export READY_AGENT_MODE=llm
-export READY_LLM_BASE_URL=https://YOUR_WORKSPACE_ID.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-export READY_LLM_MODEL=YOUR_ENABLED_TOOL_CAPABLE_MODEL
+export READY_LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+export READY_LLM_MODEL=gemini-3.8-flash
+unset READY_LLM_ENABLE_THINKING
 python -c "import getpass,os,runpy; os.environ['READY_LLM_API_KEY']=getpass.getpass('Backend model API key: '); runpy.run_path('server.py',run_name='__main__')"
 ```
 
@@ -73,7 +80,9 @@ package or OpenAI SDK is required by this adapter. The project does not load
 Some Qwen models offer a thinking switch. If your selected model documents
 `enable_thinking`, setting `READY_LLM_ENABLE_THINKING=false` adds that exact
 request property. Leaving it unset omits the property for broader provider
-compatibility. Do not send it to a provider that rejects this option.
+compatibility. Leave it unset for Gemini: this Qwen-specific property does not
+select Google's thinking settings. Other compatible providers remain configurable;
+obtain their exact endpoint and tool-capable model from their official console.
 
 For a local compatible model server, an explicit literal loopback HTTP base URL
 such as `http://127.0.0.1:8000/v1` is allowed. A key is optional for that local
@@ -177,5 +186,9 @@ provider quota; the five-case limit is a smoke check, not the full result. See
   model turn. Long conversations can require the user to repeat details.
 - Provider compatibility and model intelligence are separate from the wallet's
   confirmation boundary. Tests of one do not prove the other is perfect.
+- Use only synthetic inputs for live evaluation. The app's current scrubbing
+  and public-response echo checks do not guarantee removal of arbitrary PIN/OTP
+  text pasted by a user before it reaches a provider request. The detailed
+  scenario catalog records stronger ingress protection as an unexecuted target.
 - This remains a local mock prototype with demo sessions. It is not ready for
   public hosting, real customer data or real payment integration.

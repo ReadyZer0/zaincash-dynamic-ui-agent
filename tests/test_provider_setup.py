@@ -34,6 +34,20 @@ class ProviderSetupTests(unittest.TestCase):
         self.assertEqual(transfer["function"]["parameters"]["required"], ["recipient_id", "amount_minor", "currency"])
         self.assertIn("additionalProperties", next(item for item in definitions if item["function"]["name"] == "OPEN_TRANSFER")["function"]["parameters"])
         self.assertNotIn("test-only-key", opener.request.data.decode("utf-8"))
+        self.assertEqual(config.provider_request_attempts(), 1)
+
+    def test_uncapped_local_fixture_still_counts_attempts(self):
+        class FixtureOpener:
+            def open(self, _request, *, timeout):
+                answer = {"choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "fixture"}}]}
+                return io.BytesIO(json.dumps(answer).encode("utf-8"))
+
+        config = LLMConfig(mode="llm", base_url="http://127.0.0.1:9999/v1", model="fixture")
+        client = OpenAICompatibleClient(config)
+        client._opener = FixtureOpener()
+        for _ in range(2):
+            self.assertEqual(client.complete([{"role": "user", "content": "synthetic"}], tool_definitions(), 2)["content"], "fixture")
+        self.assertEqual(config.provider_request_attempts(), 2)
 
     def test_request_cap_must_be_valid(self):
         base = {"READY_AGENT_MODE": "llm", "READY_LLM_BASE_URL": GEMINI_BASE_URL,

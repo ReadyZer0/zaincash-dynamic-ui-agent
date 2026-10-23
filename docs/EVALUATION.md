@@ -1,5 +1,13 @@
 # Evaluation: what the numbers do and do not establish
 
+The latest live [Gemini smoke report](evaluation-results/20261023_gemini_smoke2.md)
+is a **failed** one-case development run (`MODEL_TIMEOUT`, 0/1, zero ledger
+changes). It predates attempt accounting, so its provider-request count is
+unknown. No more live requests should be made under the original five-request
+approval. Future reports include `provider_usage.reserved_attempts` and the
+per-process cap; failed HTTP attempts are counted, but this is not an
+account-wide provider usage or billing measure.
+
 The latest [clean-commit offline report](evaluation-results/20261021_offline_final.md)
 records 74/74 cases and 80/80 turns on published implementation commit `157c46a5`.
 It remains development regression evidence with no real-model calls or human
@@ -72,8 +80,8 @@ the HTTP service. The harness explicitly forces offline mode even if the shell
 contains live provider settings. Reports are written as JSON and Markdown to
 `evaluation/results/`; an exit status of 1 means at least one case failed.
 
-For a small live-model smoke run, configure the backend environment as described
-in the README and use:
+For a **separately approved future** live-model smoke run, configure the backend
+environment as described in the README and use:
 
 ```bash
 python -m evaluation.run --mode llm --allow-network --limit 5
@@ -115,7 +123,8 @@ The evaluator saves only structured public observations, synthetic inputs and
 expected labels. It does not save session identifiers, approval credentials,
 provider keys, raw provider responses or generated prose. A run records its
 timestamp, model, source commit, dirty-tree status, application fingerprint and
-dataset hash. A dirty-tree result is evidence about that fingerprint, not an
+dataset hash. New runs also record process-local reserved HTTP attempts. A
+dirty-tree result is evidence about that fingerprint, not an
 unchanged repository commit.
 
 ## Publish honest evidence

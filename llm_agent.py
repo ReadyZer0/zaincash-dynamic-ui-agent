@@ -89,7 +89,7 @@ def _is_loopback(host: str | None) -> bool:
 
 @dataclass
 class ProviderRequestBudget:
-    """Shared per-config, per-process cap; failures consume an attempt too."""
+    """Shared per-config attempt count and optional process cap."""
 
     limit: int
     used: int = 0
@@ -97,10 +97,14 @@ class ProviderRequestBudget:
 
     def reserve(self) -> bool:
         with self.lock:
-            if self.used >= self.limit:
+            if self.limit > 0 and self.used >= self.limit:
                 return False
             self.used += 1
             return True
+
+    def attempts(self) -> int:
+        with self.lock:
+            return self.used
 
 
 @dataclass(frozen=True)
@@ -112,11 +116,14 @@ class LLMConfig:
     timeout_seconds: float = 20.0
     enable_thinking: bool | None = None
     request_cap: int = 0
-    _request_budget: ProviderRequestBudget | None = field(default=None, init=False, repr=False, compare=False)
+    _request_budget: ProviderRequestBudget = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
-        if self.request_cap > 0:
-            object.__setattr__(self, "_request_budget", ProviderRequestBudget(self.request_cap))
+        object.__setattr__(self, "_request_budget", ProviderRequestBudget(self.request_cap))
+
+    def provider_request_attempts(self) -> int:
+        """Count reservations made immediately before HTTP, including failures."""
+        return self._request_budget.attempts()
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> "LLMConfig":
@@ -278,7 +285,7 @@ class OpenAICompatibleClient:
             data=json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8"),
             headers=headers, method="POST",
         )
-        if self.config._request_budget and not self.config._request_budget.reserve():
+        if not self.config._request_budget.reserve():
             raise AgentError("MODEL_REQUEST_CAP", "The approved provider request limit was reached. No payment was executed.")
         try:
             with self._opener.open(request, timeout=timeout) as response:

@@ -23,7 +23,7 @@ py -3 scripts/ready.py check
 py -3 scripts/ready.py serve
 ```
 
-`serve` defaults to offline mode. To test a chosen tool-capable provider later, set its public base URL and model ID in that terminal, then run `py -3 scripts/ready.py serve --mode llm --allow-network`. It prompts for the key without echoing it and keeps it only in the server process. `py -3 scripts/ready.py smoke --mode llm --allow-network --limit 5` runs at most five synthetic development cases with a separate hidden key prompt. See [model setup](docs/LLM_SETUP.md). On Windows, the preflight reports missing Baghdad timezone data with an install command; it does not install packages automatically.
+`serve` defaults to offline mode. A live-model launch requires separate provider/quota approval and explicit `--mode llm --allow-network`; do **not** start it under the current uncertain Gemini trial allowance. It prompts for a backend-only key if none is saved. See [model setup](docs/LLM_SETUP.md). On Windows, the preflight reports missing Baghdad timezone data with an install command; it does not install packages automatically.
 
 The server creates `data/demo_wallet.sqlite3`. To use a fresh, separate dataset, set `READY_DB_PATH` to a new local file before starting. Existing balances are preserved on restart. Do not put real data into it.
 
@@ -45,11 +45,13 @@ key prompt, an optional backend-only Windows Credential Manager setting, and a
 five-outbound-request process cap. It remains **off** unless
 `--mode llm --provider gemini --allow-network` is supplied. See
 [Gemini setup and key rotation](docs/LLM_SETUP.md#gemini-trial-preset-prepared-22-october-2026).
-One synthetic Gemini smoke request subsequently returned a provider HTTP
-error; no successful model turn or model-quality result is claimed. A later
-retry failed local key validation before any network request. The key pasted
-in chat was not reused; see the setup guide for fresh hidden-key entry. The
-saved-key setting does not call a model or enable payments by itself.
+The first synthetic Gemini smoke failed with a provider HTTP error. A later
+one-case smoke on 23 October failed with `MODEL_TIMEOUT` (**0/1**, zero ledger
+changes); [the report](docs/evaluation-results/20261023_gemini_smoke2.md)
+predates per-run request counting, so the total spent from the five approved
+requests is uncertain. No further live requests are being made under that
+approval. The exposed chat key was not reused. A saved-key setting alone does
+not call a model or enable payments.
 
 ### Android APK
 

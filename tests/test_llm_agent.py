@@ -398,6 +398,7 @@ class TransportTests(unittest.TestCase):
                 OpenAICompatibleClient(config).complete([{"role": "user", "content": "third"}], tool_definitions(), 2)
             self.assertEqual(exhausted.exception.code, "MODEL_REQUEST_CAP")
             self.assertEqual(len(captured), 2)
+            self.assertEqual(config.provider_request_attempts(), 2)
         finally:
             server.shutdown()
             server.server_close()

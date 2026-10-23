@@ -1,4 +1,38 @@
-# Implementation and verification — 21 October 2026
+# Implementation and verification — 23 October 2026
+
+## Gemini timeout and request accounting — 23 October 2026 (Asia/Baghdad)
+
+The user reported saving a fresh, free-tier Gemini key through the hidden
+Windows Credential Manager command. No key value was read, printed, committed,
+or placed in the browser or APK. One explicitly approved synthetic balance
+smoke was run from clean source commit `c1de8de9c4bf7e620aafdc5a7c05583d01ec01ca`.
+It returned `MODEL_TIMEOUT`: **0/1** cases passed, **zero** ledger mutations,
+and no successful model turn. The [sanitized report](evaluation-results/20261023_gemini_smoke2.md)
+and [structured observations](evaluation-results/20261023_gemini_smoke2.json)
+retain that result. No payment confirmation was tested.
+
+That run's report did not count outbound attempts. The model loop permits up
+to four requests per chat turn, so this run may have used 1–4; combined with
+the known first request, 2–5 of the five approved requests may have been
+used. **No further live request is authorized under that uncertain balance.**
+The evaluator now records process-local reserved HTTP attempts even on a
+failed case, with tests for capped and uncapped configurations. It cannot
+retroactively recover the second smoke's actual request count or establish
+provider-account quota, cost, or Iraqi-Arabic quality. The wallet remains
+synthetic/offline by default, with backend-owned confirmation unchanged.
+
+After this accounting change, the Windows regression suite ran **121 tests:
+120 passed, one optional credential-store roundtrip skipped**. The fresh
+offline development evaluator passed **74/74 cases and 80/80 turns**, with
+zero ledger mutations, zero incorrect payment proposals, and **zero** provider
+HTTP attempts reserved. These AI-authored cases are not held out or
+human-reviewed. The run used the changed working tree, and its local report
+marks that explicitly. Python compilation, launcher `check`, and diff
+whitespace validation passed. The guarded Ruff launcher again refused this
+isolated checkout; no Ruff result is claimed. No UI or device run was done.
+
+The dated 22 October entries below are historical and do not describe the
+current key status or remaining request allowance.
 
 ## Backend Gemini key setting — 22 October 2026 (Asia/Baghdad)
 

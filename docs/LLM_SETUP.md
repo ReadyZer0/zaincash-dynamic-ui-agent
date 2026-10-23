@@ -7,9 +7,20 @@ connected. A model key does not enable real ZainCash transfers.
 
 The default is **offline**. Live model mode uses an OpenAI-compatible Chat
 Completions endpoint with function/tool calling. This adapter has been tested
-against scripted responses and a loopback fake HTTP provider. A first bounded
-Gemini cloud attempt returned a provider HTTP error, so no successful model
-turn, dialect accuracy, or actual token cost is claimed.
+against scripted responses and a loopback fake HTTP provider. Two bounded
+Gemini cloud smoke runs have failed (HTTP error, then timeout), so no successful
+model turn, dialect accuracy, or actual token cost is claimed.
+
+**Current trial gate (23 October 2026):** The second one-case run returned
+`MODEL_TIMEOUT`, 0/1 passing cases and zero ledger changes; see the
+[sanitized report](evaluation-results/20261023_gemini_smoke2.md). It predates
+provider-attempt accounting, so its one chat turn may have reserved 1–4
+provider requests. Together with the known first attempt, 2–5 of the user's
+five approved requests may have been used. Treat that approval as exhausted:
+do not retry or start a live-model server until provider-side usage is checked
+or a new bounded budget is explicitly approved. Future evaluation reports now
+record process-local reserved HTTP attempts, including failed ones; they are
+not an account-wide quota or billing record.
 
 ## Choose the endpoint and model
 
@@ -26,8 +37,8 @@ The first synthetic one-case smoke on 22 October 2026 failed with a provider
 HTTP error and zero ledger changes; [the sanitized report](evaluation-results/20261022_gemini_smoke1.md)
 records the result. The response body was not logged. The adapter now sends
 only the documented function-schema subset, and retains backend validation of
-all model actions. That revision has passed local tests but has not yet passed
-a live smoke.
+all model actions. That revision has passed local tests, but the subsequent
+live smoke timed out and did not establish working provider integration.
 
 After confirming that the key belongs to a **free-tier** project in Google AI
 Studio, rotate any credential shared in chat and enter the replacement only
@@ -43,7 +54,9 @@ py -3 scripts/ready.py settings --provider gemini --set-key
 py -3 scripts/ready.py settings --provider gemini
 ```
 
-Run **one** bounded synthetic smoke process from this checkout after saving:
+For a **separately approved future** bounded synthetic smoke, the command is
+below. Do not run it under the exhausted/uncertain original five-request
+approval:
 
 ```powershell
 py -3 scripts/ready.py smoke --mode llm --provider gemini --allow-network --limit 1
@@ -63,8 +76,8 @@ limited quota; rotate it if the computer or account is compromised. The
 settings command only validates key shape, not provider authorization or tier.
 Codex's restricted shell may deny Credential Manager access; use your own
 interactive PowerShell for `settings` and the bounded smoke command.
-Do not send the key through chat. The first provider attempt used
-one of the five approved requests; at most four remain under that approval.
+Do not send the key through chat. The first provider attempt used one request;
+the second smoke may have used 1–4 more. Its exact count was not recorded.
 If local setup rejects the entered credential, no request was sent. Re-copy
 only the raw replacement key: the runtime validator accepts ASCII text without
 control characters, up to 4,096 characters; Windows Credential Manager limits
@@ -72,7 +85,7 @@ a saved key to 2,560 bytes. Do not retry the credential exposed in
 chat or a key already revoked in Google AI Studio.
 
 The preset requires explicit live mode and network opt-in. It has a hard cap of
-**five outbound provider attempts per process**, counting failures; one case
+**five reserved provider HTTP attempts per process**, counting failures; one case
 can require multiple attempts. The cap resets if the process restarts, so it is
 not an account-level spending control. Do not repeat the command or start a
 live server under a five-request approval without reviewing the prior usage.

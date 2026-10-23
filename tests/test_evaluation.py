@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from contextlib import redirect_stderr
 import io
 import json
-from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
+from contextlib import closing, redirect_stderr, redirect_stdout
+from pathlib import Path
 from unittest.mock import patch
 
 from evaluation.run import compare, evaluate_case, load_cases, main, observe, summarize
@@ -86,7 +86,7 @@ class EvaluationTests(unittest.TestCase):
 
             def chat(self, session, message):
                 response = super().chat(session, message)
-                with sqlite3.connect(self.test_database_path) as connection:
+                with closing(sqlite3.connect(self.test_database_path)) as connection, connection:
                     connection.execute(
                         "UPDATE accounts SET available_minor = available_minor - 1 WHERE user_id = 'demo_hassan'"
                     )
@@ -127,6 +127,35 @@ class EvaluationTests(unittest.TestCase):
             main(["--mode", "llm"])
         self.assertEqual(caught.exception.code, 2)
         self.assertIn("--allow-network", stderr.getvalue())
+
+    def test_failed_live_run_reports_reserved_attempts_without_exposing_key(self) -> None:
+        config = LLMConfig(mode="llm", base_url="https://example.test/v1",
+                           model="synthetic-test-model", api_key="unit-test-only-key", request_cap=5)
+
+        def failed_case(_case, run_config):
+            self.assertTrue(run_config._request_budget.reserve())
+            self.assertTrue(run_config._request_budget.reserve())
+            return {"id": "R001", "category": "balance", "passed": False, "turns": [{
+                "turn": 1, "message": "synthetic test", "passed": False,
+                "ledger_changed": False, "duration_ms": 1.0,
+                "observed": {"outcome": "error", "error_code": "MODEL_TIMEOUT"},
+                "failures": ["provider timed out"],
+            }]}
+
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = Path(directory) / "attempts"
+            with patch.object(LLMConfig, "from_env", return_value=config), \
+                    patch("evaluation.run.evaluate_case", side_effect=failed_case), \
+                    redirect_stdout(io.StringIO()):
+                result = main(["--mode", "llm", "--allow-network", "--limit", "1",
+                               "--output", str(prefix)])
+            report_text = prefix.with_suffix(".json").read_text(encoding="utf-8")
+            report = json.loads(report_text)
+            self.assertEqual(result, 1)
+            self.assertEqual(report["provider_usage"]["reserved_attempts"], 2)
+            self.assertEqual(report["provider_usage"]["process_cap"], 5)
+            self.assertNotIn(config.api_key, report_text)
+            self.assertIn("2 / 5", prefix.with_suffix(".md").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

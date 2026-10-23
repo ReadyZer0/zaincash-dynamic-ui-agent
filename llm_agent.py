@@ -13,6 +13,7 @@ import json
 import os
 import re
 import socket
+import threading
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -86,6 +87,26 @@ def _is_loopback(host: str | None) -> bool:
         return False
 
 
+@dataclass
+class ProviderRequestBudget:
+    """Shared per-config attempt count and optional process cap."""
+
+    limit: int
+    used: int = 0
+    lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+
+    def reserve(self) -> bool:
+        with self.lock:
+            if self.limit > 0 and self.used >= self.limit:
+                return False
+            self.used += 1
+            return True
+
+    def attempts(self) -> int:
+        with self.lock:
+            return self.used
+
+
 @dataclass(frozen=True)
 class LLMConfig:
     mode: str = "offline"
@@ -94,17 +115,31 @@ class LLMConfig:
     api_key: str = field(default="", repr=False)
     timeout_seconds: float = 20.0
     enable_thinking: bool | None = None
+    request_cap: int = 0
+    _request_budget: ProviderRequestBudget = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "_request_budget", ProviderRequestBudget(self.request_cap))
+
+    def provider_request_attempts(self) -> int:
+        """Count reservations made immediately before HTTP, including failures."""
+        return self._request_budget.attempts()
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> "LLMConfig":
         values = os.environ if environ is None else environ
         thinking = values.get("READY_LLM_ENABLE_THINKING", "").strip().lower()
+        cap_text = values.get("READY_LLM_REQUEST_CAP", "").strip()
+        cap = int(cap_text) if re.fullmatch(r"[0-9]{1,3}", cap_text) else (-1 if cap_text else 0)
+        if cap_text and cap == 0:
+            cap = -1
         return cls(
             mode=values.get("READY_AGENT_MODE", "offline").strip().lower(),
             base_url=values.get("READY_LLM_BASE_URL", "").strip().rstrip("/"),
             model=values.get("READY_LLM_MODEL", "").strip(),
             api_key=values.get("READY_LLM_API_KEY", "").strip(),
             enable_thinking=(thinking == "true") if thinking in {"true", "false"} else None,
+            request_cap=cap,
         )
 
     def configuration_error(self) -> str | None:
@@ -135,12 +170,16 @@ class LLMConfig:
             parsed.scheme == "http" and _is_loopback(parsed.hostname)
         ):
             return "The provider requires HTTPS; HTTP is allowed only for a literal loopback model server."
+        if parsed.path.rstrip("/").endswith("/chat/completions"):
+            return "Use the provider base URL without /chat/completions; READY appends that path."
         if not self.api_key and not _is_loopback(parsed.hostname):
             return "Set READY_LLM_API_KEY on the backend; never put it in the APK or chat."
         if len(self.api_key) > 4_096 or not self.api_key.isascii() or any(ord(c) < 32 for c in self.api_key):
-            return "The configured API credential is invalid."
+            return "The API credential contains non-ASCII or control characters, or is too long. Enter only the raw key at the hidden prompt."
         if not 1 <= self.timeout_seconds <= 30:
             return "The provider timeout must be between 1 and 30 seconds."
+        if not 0 <= self.request_cap <= 100:
+            return "READY_LLM_REQUEST_CAP must be an integer from 1 to 100, or unset."
         return None
 
     def public_status(self) -> dict[str, Any]:
@@ -185,6 +224,32 @@ def _strict_json(raw: str) -> Any:
     return json.loads(raw, object_pairs_hook=pairs, parse_constant=invalid_constant)
 
 
+def _gemini_tool_definitions(definitions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Send Gemini's documented function-schema subset; validate locally as before."""
+    converted: list[dict[str, Any]] = []
+    for item in definitions:
+        function = item["function"]
+        parameters = function["parameters"]
+        gemini_function: dict[str, Any] = {
+            "name": function["name"], "description": function["description"]
+        }
+        properties = parameters["properties"]
+        if properties:
+            gemini_parameters: dict[str, Any] = {
+                "type": "object",
+                "properties": {
+                    name: {key: value for key, value in spec.items()
+                           if key in {"type", "description", "enum"}}
+                    for name, spec in properties.items()
+                },
+            }
+            if parameters["required"]:
+                gemini_parameters["required"] = parameters["required"]
+            gemini_function["parameters"] = gemini_parameters
+        converted.append({"type": "function", "function": gemini_function})
+    return converted
+
+
 class OpenAICompatibleClient:
     """Small no-retry transport; provider bodies never become public errors."""
 
@@ -197,15 +262,19 @@ class OpenAICompatibleClient:
         error = self.config.configuration_error()
         if error or self.config.mode != "llm":
             raise AgentError("MODEL_NOT_CONFIGURED", error or "Live model mode is not enabled.")
+        is_gemini = self.config.base_url.rstrip("/") == GEMINI_BASE_URL and self.config.model == GEMINI_FLASH_MODEL
         payload: dict[str, Any] = {
             "model": self.config.model,
             "messages": messages,
-            "tools": tools,
+            "tools": _gemini_tool_definitions(tools) if is_gemini else tools,
             "tool_choice": "auto",
-            "parallel_tool_calls": False,
             "max_tokens": 1_024,
             "stream": False,
         }
+        if is_gemini:
+            payload["reasoning_effort"] = "low"
+        else:
+            payload["parallel_tool_calls"] = False
         if self.config.enable_thinking is not None:
             payload["enable_thinking"] = self.config.enable_thinking
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
@@ -216,6 +285,8 @@ class OpenAICompatibleClient:
             data=json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8"),
             headers=headers, method="POST",
         )
+        if not self.config._request_budget.reserve():
+            raise AgentError("MODEL_REQUEST_CAP", "The approved provider request limit was reached. No payment was executed.")
         try:
             with self._opener.open(request, timeout=timeout) as response:
                 raw = response.read(MAX_PROVIDER_BYTES + 1)
@@ -238,7 +309,7 @@ class OpenAICompatibleClient:
             elif error.code == 429:
                 code, detail = "MODEL_RATE_LIMIT", "The model provider is rate limited or its quota is exhausted. Try again later."
             else:
-                code, detail = "MODEL_HTTP_ERROR", "The provider rejected the model request. Check the backend model and endpoint settings."
+                code, detail = f"MODEL_HTTP_{error.code}", "The provider rejected the model request. Check the backend model and endpoint settings."
             raise AgentError(code, detail) from None
         except (TimeoutError, socket.timeout):
             raise AgentError("MODEL_TIMEOUT", "The model timed out. No payment was executed.") from None
@@ -423,6 +494,9 @@ _DESCRIPTIONS = {
     "PREPARE_SUPPORT_REQUEST": "Draft an owner-scoped support packet for a known transaction and issue. Sends nothing and does not create a real support ticket.",
 }
 
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
+GEMINI_FLASH_MODEL = "gemini-3.8-flash"
+
 
 def tool_definitions() -> list[dict[str, Any]]:
     definitions: list[dict[str, Any]] = []
@@ -517,6 +591,34 @@ class AgentRunner:
             raise AgentError("MODEL_MULTIPLE_ACTIONS", "The model requested multiple actions with a review. Ask for one payment at a time.")
         return validated
 
+    def _model_history_calls(self, response: dict[str, Any], validated: list[tuple[str, str, dict[str, Any]]]) -> list[dict[str, Any]]:
+        """Echo only validated calls plus Gemini's opaque in-turn signature.
+
+        The signature belongs only in the transient provider transcript. It is
+        never passed to a tool, UI trace, persisted chat history or wallet API.
+        """
+        history_calls: list[dict[str, Any]] = []
+        for original, (identifier, name, _arguments) in zip(response["tool_calls"], validated):
+            echoed: dict[str, Any] = {"id": identifier, "type": "function", "function": {
+                "name": name, "arguments": original["function"]["arguments"]
+            }}
+            extra = original.get("extra_content")
+            google = extra.get("google") if isinstance(extra, dict) else None
+            signature = google.get("thought_signature") if isinstance(google, dict) else None
+            if signature is not None:
+                if not isinstance(signature, str) or not 0 < len(signature) <= 16_384:
+                    raise AgentError("MODEL_INVALID_RESPONSE", "The provider returned invalid tool metadata. No payment was executed.")
+                echoed["extra_content"] = {"google": {"thought_signature": signature}}
+            history_calls.append(echoed)
+        if (
+            self.config.base_url.rstrip("/") == GEMINI_BASE_URL
+            and self.config.model.startswith("gemini-3")
+            and history_calls
+            and "extra_content" not in history_calls[0]
+        ):
+            raise AgentError("MODEL_INVALID_RESPONSE", "Gemini omitted required in-turn tool metadata. No payment was executed.")
+        return history_calls
+
     def run(self, message: str, history: Any,
             execute_tool: Callable[[str, dict[str, Any]], dict[str, Any]]) -> AgentResult:
         error = self.config.configuration_error()
@@ -581,10 +683,11 @@ class AgentRunner:
             if used_calls + len(calls) > MAX_TOOL_CALLS:
                 raise AgentError("MODEL_BUDGET_EXCEEDED", "The assistant reached its tool limit. No payment was executed.")
             used_calls += len(calls)
-            messages.append({"role": "assistant", "content": None,
-                             "tool_calls": [{"id": identifier, "type": "function", "function": {
-                                 "name": name, "arguments": json.dumps(arguments, ensure_ascii=False)
-                             }} for identifier, name, arguments in calls]})
+            assistant_content = response.get("content")
+            if assistant_content is not None and not isinstance(assistant_content, str):
+                raise AgentError("MODEL_INVALID_RESPONSE", "The model returned invalid text with its tool call.")
+            messages.append({"role": "assistant", "content": assistant_content,
+                             "tool_calls": self._model_history_calls(response, calls)})
             for identifier, name, arguments in calls:
                 call_start = time.monotonic()
                 if name == "ASK_USER":

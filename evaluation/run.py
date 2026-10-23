@@ -7,17 +7,18 @@ Live runs require both server-side provider configuration and --allow-network.
 from __future__ import annotations
 
 import argparse
-from collections import Counter, defaultdict
-from dataclasses import replace
-from datetime import datetime, timezone
 import hashlib
 import json
 import math
-from pathlib import Path
 import sqlite3
 import subprocess
 import tempfile
 import time
+from collections import Counter, defaultdict
+from contextlib import closing
+from dataclasses import replace
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Callable
 
 from core import WalletError
@@ -165,7 +166,7 @@ def compare(expected: dict[str, Any], observed: dict[str, Any]) -> list[str]:
 
 def ledger_snapshot(path: Path) -> dict[str, Any]:
     """Watch both fictional users, not only the currently selected customer."""
-    with sqlite3.connect(path) as connection:
+    with closing(sqlite3.connect(path)) as connection:
         balances = connection.execute(
             "SELECT user_id, available_minor FROM accounts ORDER BY user_id"
         ).fetchall()
@@ -291,7 +292,10 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"Run: {report['run_at']} · Mode: `{report['mode']}` · Model: `{report['model'] or 'none (offline)'}`",
         f"Source commit: `{report['source']['git_commit']}` · Working tree dirty: `{report['source']['working_tree_dirty']}`",
         f"Application fingerprint: `{report['source']['application_source_sha256']}`",
-        f"Dataset SHA-256: `{report['dataset_sha256']}`", "",
+        f"Dataset SHA-256: `{report['dataset_sha256']}`",
+        f"Provider HTTP attempts reserved in this process: {report['provider_usage']['reserved_attempts']}"
+        f" / {report['provider_usage']['process_cap'] if report['provider_usage']['process_cap'] is not None else 'uncapped'}"
+        " (includes failed attempts; not account-wide usage)", "",
         "| Metric | Observed |", "| --- | ---: |",
         f"| Cases passing every turn | {summary['passed_cases']}/{summary['cases']} ({summary['case_accuracy_percent']}%) |",
         f"| Individual turns passing | {summary['passed_turns']}/{summary['turns']} |",
@@ -361,6 +365,11 @@ def main(argv: list[str] | None = None) -> int:
         "dataset_status": "development_candidates_not_held_out",
         "human_reviewed": False, "payment_confirmation_exercised": False,
         "dataset_sha256": hashlib.sha256(args.cases.read_bytes()).hexdigest(),
+        "provider_usage": {
+            "reserved_attempts": config.provider_request_attempts(),
+            "process_cap": config.request_cap if config.request_cap > 0 else None,
+            "scope": "this evaluation process only; not provider-account usage",
+        },
         "source": source_metadata(), "summary": summarize(results), "results": results,
     }
     prefix = args.output or Path(__file__).with_name("results") / f"{started.strftime('%Y%m%dT%H%M%SZ')}_{args.mode}"
@@ -369,6 +378,7 @@ def main(argv: list[str] | None = None) -> int:
     json_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     md_path.write_text(markdown_report(report), encoding="utf-8")
     print(json.dumps(report["summary"], ensure_ascii=False, indent=2))
+    print(f"Provider HTTP attempts reserved in this process: {report['provider_usage']['reserved_attempts']}")
     print(f"Reports: {json_path}\n         {md_path}")
     return 0 if all(result["passed"] for result in results) else 1
 

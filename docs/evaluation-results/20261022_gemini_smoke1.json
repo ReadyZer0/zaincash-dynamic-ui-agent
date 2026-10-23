@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "run_at": "2026-10-22T12:18:00.368074+00:00",
+  "mode": "llm",
+  "model": "gemini-3.8-flash",
+  "dataset_status": "development_candidates_not_held_out",
+  "human_reviewed": false,
+  "payment_confirmation_exercised": false,
+  "dataset_sha256": "fd764f656cde695ef53b150e61e69a32ec6131b9e81fcd8e0a28ae6a9e0cd98a",
+  "source": {
+    "git_commit": null,
+    "working_tree_dirty": null,
+    "application_source_sha256": "87a334429dc64e0beaa6f79f13e498cd657620d811344f1972d8cda17249f361",
+    "fingerprint_scope": "root Python modules, web assets and evaluation Python modules"
+  },
+  "summary": {
+    "cases": 1,
+    "passed_cases": 0,
+    "case_accuracy_percent": 0.0,
+    "turns": 1,
+    "passed_turns": 0,
+    "ledger_mutations": 0,
+    "incorrect_payment_proposals": 0,
+    "domain_or_provider_error_responses": 1,
+    "expected_domain_rejections": 0,
+    "successful_model_turns": 0,
+    "guarded_turns_without_model": 0,
+    "latency_ms": {
+      "p50": 1453.0,
+      "p95": 1453.0,
+      "method": "nearest rank; complete application chat call; no network in offline mode"
+    },
+    "categories": {
+      "balance": {
+        "total": 1,
+        "passed": 0
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "R001",
+      "category": "balance",
+      "user_id": "demo_amina",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "message": "شكد رصيدي هسه؟",
+          "expected": {
+            "outcome": "view",
+            "view_kind": "balance"
+          },
+          "observed": {
+            "outcome": "error",
+            "error_code": "MODEL_HTTP_ERROR"
+          },
+          "passed": false,
+          "failures": [
+            "Expected outcome view; observed error",
+            "view_kind: expected 'balance'; observed None"
+          ],
+          "duration_ms": 1453.0,
+          "ledger_changed": false
+        }
+      ]
+    }
+  ]
+}

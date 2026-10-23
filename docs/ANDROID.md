@@ -4,6 +4,35 @@ The APK is an Android client for the READY prototype. It displays the same mobil
 
 The supported initial connection is **USB with `adb reverse`**. This keeps the existing backend bound to loopback. Installing the APK alone will show the connection instructions until the backend is reachable.
 
+## API-ready rebuild — 23 October 2026
+
+The signed debug APK at `android/build/outputs/AliDheaa_Topic04_READY_Debug.apk`
+was rebuilt from clean commit `e0c56788daf32d153b43b2f302c7e9e8c126a8fa` using the
+project-local JDK and Android SDK. SHA-256:
+`11becaa358131f3029ab76cce6a1ded854b4e2fa63b0e4603a236dba44a78d06`
+(33,326 bytes). The existing debug signing key was reused, so this is an
+installable update to an app signed with that same key. The build verified
+the manifest, DEX/ZIP integrity, 16-KiB alignment, v2/v3 signature and 38
+native endpoint-policy checks.
+
+A new loopback-only integration test exercised the same web page and HTTP
+routes the APK loads: bootstrap → Iraqi-Arabic chat → local fake model API →
+server-owned balance card. It also checked a simulated provider rate limit,
+zero mock debits, and no credential in the app response. The full Python
+suite ran 122 tests (121 passed, one optional credential-store test skipped).
+This verifies the client/backend/API contract with a fake provider, **not** a
+successful Gemini request or physical-device operation. `adb devices -l`
+showed no connected devices; the temporary ADB daemon was stopped.
+
+For this Windows checkout, run the backend **offline** in the foreground from
+the repository directory, then follow the USB steps below. Once a separately
+approved Gemini request budget exists, the backend—not the APK—can instead be
+started with `scripts/ready.py serve --mode llm --provider gemini --allow-network`
+and the saved Windows-user key. The previous five-request approval is treated
+as exhausted because the timed-out smoke did not record its internal request
+count. Do not start live mode under that old approval. The phone's connection
+setting remains `http://127.0.0.1:8765/`, **never** the Gemini API URL.
+
 ## Quick start on a physical phone
 
 Requirements: Android 8.0 or newer, a current Android System WebView, Python 3.12+, Android SDK Platform Tools (`adb`), and a USB data cable.
@@ -81,16 +110,51 @@ Then run the build script, replacing the SDK path with your installation:
 python scripts/build_android.py --sdk /path/to/Android/Sdk
 ```
 
-On Windows, pass a quoted Windows SDK path. `java` and `keytool` must be on PATH. `READY_ANDROID_SDK` can be used instead of `--sdk`.
+On Windows, pass a quoted Windows SDK path. `java` and `keytool` must be on PATH,
+or pass `--jdk "C:\path\to\jdk"` for a portable JDK without changing system
+settings. `READY_ANDROID_SDK` can be used instead of `--sdk`; `JAVA_HOME` is the
+default for `--jdk` when present. Install the required SDK packages and personally
+review/accept their licenses through the official Android tools. The build script
+does not download tools, accept licenses or change machine-wide settings.
 
 Outputs:
 
 - `android/build/outputs/AliDheaa_Topic04_READY_Debug.apk`
-- `android/build/outputs/build-info.json` with the APK SHA-256, size, package, API levels, test result and signature verification.
+- `android/build/outputs/build-info.json` with the APK SHA-256, size, actual manifest
+  version/package/API levels, source commit/branch/dirty-tree status, Android-source
+  fingerprint, Java version, endpoint test result and signature verification.
 
-The script performs 38 exact-origin and endpoint-validation assertions, compiles Java/resources/DEX, aligns and signs the package, verifies its signature, checks the declared manifest, and checks the APK ZIP/DEX structure. A fresh local debug signing key is created in ignored `android/.local/debug.keystore`; neither that key nor the SDK/build output is committed. Debug builds from different signing keys cannot update one another with `adb install -r`; uninstall the prior test app first if Android reports a signature conflict. Uninstalling clears this client's local settings.
+The script performs the Java endpoint-policy assertions, compiles Java/resources/DEX,
+aligns and signs the package, verifies its signature, checks the declared manifest,
+and validates ZIP integrity plus DEX header, hashes and table bounds. These structural
+checks do not establish on-device execution. Each build uses a new ignored
+`android/build/run-*` directory; it no longer deletes previous builds. The latest
+verified files are copied to `android/build/outputs/`. A prior convenience copy is
+preserved under the new run's `previous-outputs/` before replacement. A failed build
+before publication leaves the previous artifact intact.
+
+An existing debug signing key is reused from ignored `android/.local/debug.keystore`;
+a new key is created only when absent. Neither keys nor SDK/build outputs are committed.
+Debug builds using different keys cannot update one another with `adb install -r`.
+If a signature conflict appears, preserve the previous APK/key and explain the choice:
+use the matching key to keep app state, or obtain the owner's approval before uninstalling
+the old test app. Uninstalling clears client settings; never do it silently.
 
 This is a signed **debug test build**, not a Play Store or production release. No emulator or physical Android device was available during the initial build, so installation, runtime WebView behavior and phone layout still need the device acceptance checks above.
+
+## Current Windows rebuild — 22 October 2026
+
+The following entry is historical; the 23 October rebuild above is the current
+local artifact.
+
+The project-local official SDK/JDK rebuild completed from clean commit
+`98f40f953119e7d101a34c120b7ada8589c3caa4`. The resulting package is
+`iq.ready.billpay.demo`, version `0.2.0-demo`, 33,326 bytes. Its SHA-256 is
+`356ec0596e0f3c5aa358ade931685ed5da58e29cfcbb6ab7fa17330db62a05d5`.
+The signed APK uses v2/v3, passes 16-KiB alignment and structural DEX checks,
+and passed 38 native endpoint-policy assertions. The matching ignored local
+debug key and full build metadata remain beside the APK; this does not claim
+an install or runtime check on a phone.
 
 ## Initial build tool provenance
 
@@ -119,3 +183,5 @@ Only `INTERNET` is requested. There is no camera, microphone, contacts, storage 
 - [Android Debug Bridge](https://developer.android.com/tools/adb)
 - [AAPT2](https://developer.android.com/tools/aapt2), [D8](https://developer.android.com/tools/d8), [APK signing](https://developer.android.com/tools/apksigner)
 - [SDK repository package metadata](https://dl.google.com/android/repository/repository2-1.xml)
+- [SDK package-license acceptance](https://developer.android.com/tools/sdkmanager#accept-licenses)
+- [DEX format](https://source.android.com/docs/core/runtime/dex-format)

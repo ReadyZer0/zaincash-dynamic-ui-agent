@@ -16,6 +16,15 @@ python server.py
 
 On Windows, `py -3 server.py` also works. Open `http://127.0.0.1:8765` on the same computer. The default is `OFFLINE_DEMO`, a deterministic interpreter with no model calls. Select a fictional profile and try `حول ٥٠ ألف لعلي`: the app asks which saved Ali you mean before preparing a review.
 
+For a foreground setup check and explicit model launch, use the standard-library helper:
+
+```powershell
+py -3 scripts/ready.py check
+py -3 scripts/ready.py serve
+```
+
+`serve` defaults to offline mode. A live-model launch requires separate provider/quota approval and explicit `--mode llm --allow-network`; do **not** start it under the current uncertain Gemini trial allowance. It prompts for a backend-only key if none is saved. See [model setup](docs/LLM_SETUP.md). On Windows, the preflight reports missing Baghdad timezone data with an install command; it does not install packages automatically.
+
 The server creates `data/demo_wallet.sqlite3`. To use a fresh, separate dataset, set `READY_DB_PATH` to a new local file before starting. Existing balances are preserved on restart. Do not put real data into it.
 
 ### Connect a real model
@@ -31,9 +40,28 @@ Follow [LLM_SETUP.md](docs/LLM_SETUP.md) for Windows/Linux commands with a hidde
 
 Use the actual endpoint/model from the provider console. Alibaba Qwen's compatible API is a documented candidate; no specific cloud model quality or compatibility result is claimed yet. Local compatible loopback model servers are supported. The app distinguishes configuration present from a successful model request. A failed call never silently becomes an offline result. `.env` files are not loaded automatically.
 
+A Gemini trial preset is now available through `scripts/ready.py` with a hidden
+key prompt, an optional backend-only Windows Credential Manager setting, and a
+five-outbound-request process cap. It remains **off** unless
+`--mode llm --provider gemini --allow-network` is supplied. See
+[Gemini setup and key rotation](docs/LLM_SETUP.md#gemini-trial-preset-prepared-22-october-2026).
+The first synthetic Gemini smoke failed with a provider HTTP error. A later
+one-case smoke on 23 October failed with `MODEL_TIMEOUT` (**0/1**, zero ledger
+changes); [the report](docs/evaluation-results/20261023_gemini_smoke2.md)
+predates per-run request counting, so the total spent from the five approved
+requests is uncertain. No further live requests are being made under that
+approval. The exposed chat key was not reused. A saved-key setting alone does
+not call a model or enable payments.
+
 ### Android APK
 
 The native **READY Demo** client loads the same mobile interface from this backend. It contains neither Python nor an LLM key. The backend computer must remain available while testing.
+
+The current signed test APK (`android/build/outputs/AliDheaa_Topic04_READY_Debug.apk`,
+ignored by Git) was rebuilt locally on 23 October 2026. A fake-provider test verifies the
+web-client → backend → model-tool → balance-card path and a safe rate-limit
+failure. No phone was connected and Gemini itself has not produced a verified
+reply. See the [dated Android evidence and setup](docs/ANDROID.md#api-ready-rebuild--23-october-2026).
 
 See [ANDROID.md](docs/ANDROID.md) for APK metadata, installation, USB setup, limitations and a source rebuild. With Android platform tools and USB debugging ready, run on the backend computer:
 
@@ -73,7 +101,9 @@ python -m evaluation.run --mode offline
 
 On 21 October 2026, the offline development run passed **74/74 cases and 80/80 turns**, with **0 incorrect proposals and 0 ledger changes during chat**. These AI-authored cases informed implementation fixes. They are **not held out or native-human reviewed**. This is not real-model accuracy or payment completion accuracy: the evaluator never presses Confirm. Confirmation and retry behavior have separate tests.
 
-See [the final measured report](docs/evaluation-results/20261021_offline_final.md) and [evaluation protocol](docs/EVALUATION.md). Live evaluation requires explicit network opt-in and can consume quota. No live provider call, real-model latency/cost, or physical Android device test is claimed in this delivery.
+See [the final measured report](docs/evaluation-results/20261021_offline_final.md) and [evaluation protocol](docs/EVALUATION.md). Live evaluation requires explicit network opt-in and can consume quota. That dated 21 October run involved no live provider call or physical Android device test.
+
+The 22 October continuation from draft [PR #1](https://github.com/ReadyZer0/zaincash-dynamic-ui-agent/pull/1) is tracked in [its checklist](docs/CONTINUATION_CHECKLIST.md). Its clean-source Windows suite passed **104/104**, and its clean-source offline **development** run passed **74/74 cases, 80/80 turns**; see [current status](docs/IMPLEMENTATION_STATUS.md) and the [dated report](docs/evaluation-results/20261022_windows_offline.md). After the later Gemini preparation, the expanded suite passed **110/110** and a [new clean-source offline development run](docs/evaluation-results/20261022_gemini_prep_offline.md) passed **74/74 cases, 80/80 turns**. A first [synthetic Gemini smoke](docs/evaluation-results/20261022_gemini_smoke1.md) failed with a provider HTTP error and no ledger change; the compatibility payload was revised and retested locally. A later hidden-key retry failed before any network request; the now clearer validator passed in the expanded **111/111** local suite. No successful Gemini turn is yet claimed. The clean-source debug APK was rebuilt and structurally verified, but has not been run on a phone. The 21 October report above retains its original revision. The [human-review protocol](docs/HUMAN_REVIEW.md) prepares a separate final dataset without representing AI-authored development examples as native-speaker evidence.
 
 ## Focus and roadmap
 

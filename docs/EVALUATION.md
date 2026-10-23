@@ -1,6 +1,19 @@
 # Evaluation: what the numbers do and do not establish
 
-The latest [clean-commit offline report](evaluation-results/20261021_offline_final.md)
+The latest live [Gemini smoke report](evaluation-results/20261023_gemini_smoke2.md)
+is a **failed** one-case development run (`MODEL_TIMEOUT`, 0/1, zero ledger
+changes). It predates attempt accounting, so its provider-request count is
+unknown. No more live requests should be made under the original five-request
+approval. Future reports include `provider_usage.reserved_attempts` and the
+per-process cap; failed HTTP attempts are counted, but this is not an
+account-wide provider usage or billing measure.
+
+The latest [clean-source offline report](evaluation-results/20261023_offline_clean.md)
+at `dbabd67aea017832c6f684cd3685abc79029cb8d` passed 74/74 development
+cases and 80/80 turns with zero reserved provider attempts. This verifies the
+offline regression and new accounting field, not Gemini behavior.
+
+The earlier [21 October clean-commit offline report](evaluation-results/20261021_offline_final.md)
 records 74/74 cases and 80/80 turns on published implementation commit `157c46a5`.
 It remains development regression evidence with no real-model calls or human
 review. The earlier development snapshot below is retained for provenance.
@@ -72,8 +85,8 @@ the HTTP service. The harness explicitly forces offline mode even if the shell
 contains live provider settings. Reports are written as JSON and Markdown to
 `evaluation/results/`; an exit status of 1 means at least one case failed.
 
-For a small live-model smoke run, configure the backend environment as described
-in the README and use:
+For a **separately approved future** live-model smoke run, configure the backend
+environment as described in the README and use:
 
 ```bash
 python -m evaluation.run --mode llm --allow-network --limit 5
@@ -115,7 +128,8 @@ The evaluator saves only structured public observations, synthetic inputs and
 expected labels. It does not save session identifiers, approval credentials,
 provider keys, raw provider responses or generated prose. A run records its
 timestamp, model, source commit, dirty-tree status, application fingerprint and
-dataset hash. A dirty-tree result is evidence about that fingerprint, not an
+dataset hash. New runs also record process-local reserved HTTP attempts. A
+dirty-tree result is evidence about that fingerprint, not an
 unchanged repository commit.
 
 ## Publish honest evidence
@@ -153,8 +167,10 @@ review status, prompts, models and source versions differ.
 
 ## Human usability evidence
 
-Test the actual APK with three to five Iraqi Arabic speakers, including people
-with lower smartphone confidence if available. Use synthetic accounts. Ask each
+Conduct **5–8 observed task-based sessions** with Iraqi Arabic speakers, including
+people with lower smartphone confidence if available. A smaller pilot may check
+the task instructions, but does not replace the planned 5–8 sessions. Use
+synthetic accounts. Ask each
 person to send to one of two contacts with the same first name, read the fee and
 remaining balance before confirming, and recover an uncertain result without
 starting another payment. Observe without coaching first.
@@ -164,3 +180,24 @@ the person can identify recipient/amount/fee, time to the correct review, and
 what they think happened after failure. Ask which wording or control confused
 them. These observations can substantiate the user-impact argument; do not
 invent participant results, quotes or approval.
+
+## Review and final-set preparation — 22 October 2026
+
+[Human-review and usability protocol](HUMAN_REVIEW.md) supplies the reviewer
+record format, five observed tasks and blank observation fields. There are no
+completed human sessions or human-edited requests in this delivery. The existing
+74 development cases and their labels remain unchanged.
+
+`python -m evaluation.freeze` prepares a blank review scaffold and checks a
+separately authored final candidate set. It requires the exact 80 payment /
+50 read-help / 70 adversarial split, unique case IDs and dialogues, no identical
+development dialogues, human label-review records for every case, and records
+of at least 50 distinct requests actually edited by Iraqi Arabic speakers.
+Approval or whitespace-only edits do not meet that last gate. The freeze records
+dataset/review/development hashes and refuses to overwrite existing evidence.
+
+The tool validates **record structure and consistency**, not whether a person
+really participated, whether a rewrite is idiomatic, or whether the team truly
+kept the data independent. The custodian must verify those facts. A successful
+freeze means the candidate is ready for evaluation, not that accuracy or payment
+safety has passed. No frozen final dataset is included or claimed here.

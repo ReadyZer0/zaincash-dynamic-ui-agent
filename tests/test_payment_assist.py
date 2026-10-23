@@ -6,10 +6,11 @@ the real wallet ledger; no external provider or payment service is contacted.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
+from contextlib import closing
+from pathlib import Path
 from unittest.mock import patch
 
 from core import WalletError
@@ -37,7 +38,7 @@ class PaymentAssistTests(unittest.TestCase):
         return self.app.wallet.get_balance("demo_amina")["available_minor"]
 
     def row(self, sql: str, parameters: tuple = ()) -> tuple:
-        with sqlite3.connect(self.path) as connection:
+        with closing(sqlite3.connect(self.path)) as connection:
             return connection.execute(sql, parameters).fetchone()
 
     def test_audit_failure_after_debit_preserves_receipt_and_retry_idempotence(self) -> None:
@@ -121,7 +122,7 @@ class PaymentAssistTests(unittest.TestCase):
         self.assertEqual(self.balance(), after)
 
     def test_insights_total_is_traceable_and_excludes_other_owners_and_unsettled_rows(self) -> None:
-        with sqlite3.connect(self.path) as connection:
+        with closing(sqlite3.connect(self.path)) as connection, connection:
             connection.execute("UPDATE transactions SET status='FAILED',receipt_json=NULL WHERE id='tx_history_amina_002'")
             connection.execute("UPDATE transactions SET status='UNKNOWN',receipt_json=NULL WHERE id='tx_history_amina_003'")
         before = self.balance()
@@ -146,7 +147,7 @@ class PaymentAssistTests(unittest.TestCase):
         self.assertEqual(self.balance(), before)
 
     def test_support_packet_uses_original_record_and_does_not_send_or_debit(self) -> None:
-        with sqlite3.connect(self.path) as connection:
+        with closing(sqlite3.connect(self.path)) as connection, connection:
             connection.execute("UPDATE transactions SET status='UNKNOWN',receipt_json=NULL WHERE id='tx_history_amina_003'")
         before = self.balance()
         before_count = self.row("SELECT COUNT(*) FROM transactions")[0]

@@ -8,7 +8,12 @@ approval. Future reports include `provider_usage.reserved_attempts` and the
 per-process cap; failed HTTP attempts are counted, but this is not an
 account-wide provider usage or billing measure.
 
-The latest [clean-commit offline report](evaluation-results/20261021_offline_final.md)
+The latest [clean-source offline report](evaluation-results/20261023_offline_clean.md)
+at `dbabd67aea017832c6f684cd3685abc79029cb8d` passed 74/74 development
+cases and 80/80 turns with zero reserved provider attempts. This verifies the
+offline regression and new accounting field, not Gemini behavior.
+
+The earlier [21 October clean-commit offline report](evaluation-results/20261021_offline_final.md)
 records 74/74 cases and 80/80 turns on published implementation commit `157c46a5`.
 It remains development regression evidence with no real-model calls or human
 review. The earlier development snapshot below is retained for provenance.

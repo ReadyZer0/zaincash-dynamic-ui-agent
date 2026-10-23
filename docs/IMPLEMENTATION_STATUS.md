@@ -26,8 +26,10 @@ After this accounting change, the Windows regression suite ran **121 tests:
 offline development evaluator passed **74/74 cases and 80/80 turns**, with
 zero ledger mutations, zero incorrect payment proposals, and **zero** provider
 HTTP attempts reserved. These AI-authored cases are not held out or
-human-reviewed. The run used the changed working tree, and its local report
-marks that explicitly. Python compilation, launcher `check`, and diff
+human-reviewed. A post-commit rerun from clean source `dbabd67aea017832c6f684cd3685abc79029cb8d`
+confirmed the same result; see its [readable report](evaluation-results/20261023_offline_clean.md)
+and [structured observations](evaluation-results/20261023_offline_clean.json).
+Python compilation, launcher `check`, and diff
 whitespace validation passed. The guarded Ruff launcher again refused this
 isolated checkout; no Ruff result is claimed. No UI or device run was done.
 

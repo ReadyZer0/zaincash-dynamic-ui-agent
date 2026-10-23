@@ -4,6 +4,35 @@ The APK is an Android client for the READY prototype. It displays the same mobil
 
 The supported initial connection is **USB with `adb reverse`**. This keeps the existing backend bound to loopback. Installing the APK alone will show the connection instructions until the backend is reachable.
 
+## API-ready rebuild — 23 October 2026
+
+The signed debug APK at `android/build/outputs/AliDheaa_Topic04_READY_Debug.apk`
+was rebuilt from clean commit `e0c56788daf32d153b43b2f302c7e9e8c126a8fa` using the
+project-local JDK and Android SDK. SHA-256:
+`11becaa358131f3029ab76cce6a1ded854b4e2fa63b0e4603a236dba44a78d06`
+(33,326 bytes). The existing debug signing key was reused, so this is an
+installable update to an app signed with that same key. The build verified
+the manifest, DEX/ZIP integrity, 16-KiB alignment, v2/v3 signature and 38
+native endpoint-policy checks.
+
+A new loopback-only integration test exercised the same web page and HTTP
+routes the APK loads: bootstrap → Iraqi-Arabic chat → local fake model API →
+server-owned balance card. It also checked a simulated provider rate limit,
+zero mock debits, and no credential in the app response. The full Python
+suite ran 122 tests (121 passed, one optional credential-store test skipped).
+This verifies the client/backend/API contract with a fake provider, **not** a
+successful Gemini request or physical-device operation. `adb devices -l`
+showed no connected devices; the temporary ADB daemon was stopped.
+
+For this Windows checkout, run the backend **offline** in the foreground from
+the repository directory, then follow the USB steps below. Once a separately
+approved Gemini request budget exists, the backend—not the APK—can instead be
+started with `scripts/ready.py serve --mode llm --provider gemini --allow-network`
+and the saved Windows-user key. The previous five-request approval is treated
+as exhausted because the timed-out smoke did not record its internal request
+count. Do not start live mode under that old approval. The phone's connection
+setting remains `http://127.0.0.1:8765/`, **never** the Gemini API URL.
+
 ## Quick start on a physical phone
 
 Requirements: Android 8.0 or newer, a current Android System WebView, Python 3.12+, Android SDK Platform Tools (`adb`), and a USB data cable.
@@ -114,6 +143,9 @@ the old test app. Uninstalling clears client settings; never do it silently.
 This is a signed **debug test build**, not a Play Store or production release. No emulator or physical Android device was available during the initial build, so installation, runtime WebView behavior and phone layout still need the device acceptance checks above.
 
 ## Current Windows rebuild — 22 October 2026
+
+The following entry is historical; the 23 October rebuild above is the current
+local artifact.
 
 The project-local official SDK/JDK rebuild completed from clean commit
 `98f40f953119e7d101a34c120b7ada8589c3caa4`. The resulting package is

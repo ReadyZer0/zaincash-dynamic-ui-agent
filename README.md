@@ -57,6 +57,12 @@ not call a model or enable payments.
 
 The native **READY Demo** client loads the same mobile interface from this backend. It contains neither Python nor an LLM key. The backend computer must remain available while testing.
 
+The current signed test APK (`android/build/outputs/AliDheaa_Topic04_READY_Debug.apk`,
+ignored by Git) was rebuilt locally on 23 October 2026. A fake-provider test verifies the
+web-client → backend → model-tool → balance-card path and a safe rate-limit
+failure. No phone was connected and Gemini itself has not produced a verified
+reply. See the [dated Android evidence and setup](docs/ANDROID.md#api-ready-rebuild--23-october-2026).
+
 See [ANDROID.md](docs/ANDROID.md) for APK metadata, installation, USB setup, limitations and a source rebuild. With Android platform tools and USB debugging ready, run on the backend computer:
 
 ```bash

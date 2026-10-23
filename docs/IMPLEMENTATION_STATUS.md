@@ -1,5 +1,27 @@
 # Implementation and verification — 23 October 2026
 
+## API-ready Android rebuild — 23 October 2026 (Asia/Baghdad)
+
+The existing Android WebView client was rebuilt from clean commit
+`e0c56788daf32d153b43b2f302c7e9e8c126a8fa` with the project-local
+official Android SDK/JDK and the existing ignored debug signing key. The
+[APK and installation instructions](ANDROID.md#api-ready-rebuild--23-october-2026)
+record SHA-256 `11becaa358131f3029ab76cce6a1ded854b4e2fa63b0e4603a236dba44a78d06`.
+Package `iq.ready.billpay.demo`, version `0.2.0-demo`, 33,326 bytes; manifest,
+ZIP/DEX, 16-KiB alignment, v2/v3 signing, and **38** native endpoint-policy
+checks passed. A new local fake-provider HTTP test verifies the APK's
+same-origin web/API path through a balance tool response and rate-limit error
+with no debit or provider secret in app responses. The full Python suite ran
+**122 tests (121 passed, one optional credential-store test skipped)**.
+
+No phone was connected (`adb devices -l` returned an empty list), so the APK
+has **not** been installed or launched on a physical device. The temporary
+ADB server was stopped. No live Gemini request was made: the prior approval
+is conservatively exhausted and the earlier Gemini smoke did not succeed.
+The APK is a client of the local Python backend, not a standalone model app;
+the backend key remains outside the APK, and payment confirmation remains
+server-owned.
+
 ## Gemini timeout and request accounting — 23 October 2026 (Asia/Baghdad)
 
 The user reported saving a fresh, free-tier Gemini key through the hidden

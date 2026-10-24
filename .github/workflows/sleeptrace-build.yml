@@ -4,8 +4,12 @@ on:
   push:
     branches:
       - sleeptrace-apk-build-20261024
-  pull_request:
+    paths-ignore:
+      - 'built_apk/**'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -49,3 +53,15 @@ jobs:
           name: SleepTrace-Fixed-1.0.2
           path: artifact/*
           if-no-files-found: error
+
+      - name: Commit APK to temporary build branch
+        if: github.event_name == 'push'
+        run: |
+          mkdir -p built_apk
+          cp artifact/SleepTrace-Fixed-1.0.2.apk built_apk/SleepTrace-Fixed-1.0.2.apk
+          cp artifact/SleepTrace-Fixed-1.0.2.apk.sha256 built_apk/SleepTrace-Fixed-1.0.2.apk.sha256
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add built_apk/
+          git diff --cached --quiet || git commit -m "build: publish SleepTrace Fixed APK"
+          git push origin HEAD:sleeptrace-apk-build-20261024

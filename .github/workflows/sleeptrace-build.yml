@@ -20,7 +20,7 @@ jobs:
         with:
           gradle-version: '8.13'
       - name: Install Android SDK 36
-        run: yes | sdkmanager "platforms;android-36" "build-tools;36.0.0"
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Reconstruct source
         run: |
           cat sleeptrace_min/p0* | base64 -d > /tmp/SleepTrace-build-min.zip

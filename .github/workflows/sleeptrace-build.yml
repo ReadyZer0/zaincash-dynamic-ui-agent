@@ -32,6 +32,7 @@ jobs:
           cat sleeptrace_min/p0* | base64 -d > /tmp/SleepTrace-build-min.zip
           mkdir -p /tmp/st
           unzip -q /tmp/SleepTrace-build-min.zip -d /tmp/st
+          cp sleeptrace_patch/MainActivity.java /tmp/st/app/src/main/java/com/ready/sleeptrace/MainActivity.java
           grep -q "applicationId 'com.ready.sleeptrace.fixed'" /tmp/st/app/build.gradle
       - name: Build APK
         working-directory: /tmp/st
